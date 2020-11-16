@@ -5,6 +5,10 @@
  */
 
 
+
+
+
+
 CLASS(Test);
 
 CHECK_CLASS_ATTRIBUTE(tmp);
@@ -15,13 +19,20 @@ CHECK_CLASS_METHOD(sum);
 
 CHECK_FUNCTION(multiply);
 
-CHECK_CLASS_ATTRIBUTE_SIGNATURE(tmp, int T::*, tmp_int);
-CHECK_CLASS_ATTRIBUTE_SIGNATURE(ftmp, float T::*, ftmp_float);
+CHECK_CLASS_ATTRIBUTE_SIGNATURE(tmp, int, tmp_int);
+CHECK_CLASS_ATTRIBUTE_SIGNATURE(ftmp, float, ftmp_float);
 
 CHECK_CLASS_METHOD_SIGNATURE(print, void (T::*)(), rv_print_);
 CHECK_CLASS_METHOD_SIGNATURE(sum, int (T::*)(int, int), ri_sum_ii);
 
 CHECK_FUNCTION_SIGNATURE(multiply, int (T::*)(int, int), int_multiply_int_int);
+
+
+TEST(Segmentation, Fault) {
+
+	SEGMENTATION_FAULT_MESSAGE("Test", "Message");
+	
+}
 
 
 TEST(Function, Name_multiply) {

@@ -1,0 +1,275 @@
+#include <cstdio>
+#include <vector>
+#include <algorithm>
+#include <string>
+#include <iostream>
+#include <cstdint>
+
+class Person {
+public:
+    std::string mName;
+    uint8_t mAge;
+    double mSalary;
+    Person() : mAge(-1), mSalary(-1) {}
+    Person(std::string name, uint8_t age, double salary) : mName(std::move(name)), mAge(age), mSalary(salary) {}
+    bool operator==(const Person& other) const { return mName == other.mName && mAge == other.mAge && mSalary == other.mSalary; }
+    bool operator<(const Person& other) const override { return mName < other.mName; }
+};
+
+class Building {
+protected:
+    std::string mBuildingName;
+    std::string mType;
+    Person mCoordinator;
+    std::vector<Person> mEmployees;
+    std::vector<Person> mCitizens;
+public:
+    Building(std::string type, std::string buildingName) : mType(std::move(type)), mBuildingName(std::move(buildingName)) {}
+    virtual void add(const Person& person) = 0;
+    virtual void remove(const Person& person) = 0;
+    virtual Building* operator+(const Person& person) = 0;
+    virtual Building* operator-() { return nullptr; }
+    virtual Building* operator-(const Person& person) { return nullptr; }
+    [[nodiscard]] Person getCoordinator() const { return mCoordinator; }
+    [[nodiscard]] uint16_t getCitizensSize() const { return mCitizens.size(); }
+    [[nodiscard]] uint16_t getEmployeesSize() const { return mEmployees.size(); }
+    [[nodiscard]] Person getEmployee(uint16_t index) const { return mEmployees[index]; }
+    [[nodiscard]] Person getCitizen(uint16_t index) const { return mCitizens[index]; }
+    [[nodiscard]] std::string getBuildingName() const { return mBuildingName; }
+    [[nodiscard]] std::string getType() const { return mType; }
+};
+
+class CityHall : public Building {
+public:
+    explicit CityHall(std::string buildingName) : Building("CityHall", std::move(buildingName)) {
+        mEmployees.clear();
+        mCoordinator = Person();
+    }
+    Building* operator+(const Person& mayor) override {
+        if (mCoordinator == Person()) { mCoordinator = mayor; }
+        return this;
+    }
+    Building* operator-() override {
+        mCoordinator = Person();
+        return this;
+    }
+    void add(const Person& employee) override { mEmployees.emplace_back(employee); }
+    void remove(const Person& employee) override {
+        mEmployees.erase(std::find(mEmployees.begin(), mEmployees.end(), employee));
+    }
+};
+
+class Hospital : public Building {
+public:
+    explicit Hospital(std::string buildingName) : Building("Hospital", std::move(buildingName)) { mCitizens.clear(); mEmployees.clear(); }
+    Building* operator+(const Person& doctor) override {
+        mEmployees.emplace_back(doctor);
+        return this;
+    }
+    Building* operator-(const Person& doctor) override {
+        mEmployees.erase(std::find(mEmployees.begin(), mEmployees.end(), doctor));
+        return this;
+    }
+    void add(const Person& patient) override { mCitizens.emplace_back(patient); }
+    void remove(const Person& patient) override {
+        mCitizens.erase(std::find(mCitizens.begin(), mCitizens.end(), patient));
+    }
+};
+
+class PoliceStation : public Building {
+public:
+    explicit PoliceStation(std::string buildingName) : Building("PoliceStation", std::move(buildingName)) { mCitizens.clear(); mEmployees.clear(); }
+    Building* operator+(const Person& policeMan) override {
+        mEmployees.emplace_back(policeMan);
+        return this;
+    }
+    Building* operator-(const Person& policeMan) override {
+        mEmployees.erase(std::find(mEmployees.begin(), mEmployees.end(), policeMan));
+        return this;
+    }
+    void add(const Person& busted) override { mCitizens.emplace_back(busted); }
+    void remove(const Person& busted) override {
+        mCitizens.erase(std::find(mCitizens.begin(), mCitizens.end(), busted));
+    }
+};
+
+class House : public Building {
+    uint16_t mMaxNumber;
+public:
+    House(std::string buildingName, uint16_t maxNumber) : Building("House", std::move(buildingName)) {
+        mCoordinator = Person();
+        mCitizens.clear();
+        mMaxNumber = maxNumber;
+    }
+    Building* operator+(const Person& owner) override {
+        if (mCoordinator == Person()) { mCoordinator = owner; }
+        return this;
+    }
+    Building* operator-() override {
+        mCoordinator = Person();
+        return this;
+    }
+    void add(const Person& citizen) override { if (mCitizens.size() + 1 < mMaxNumber) mCitizens.emplace_back(citizen); }
+    void remove(const Person& citizen) override {
+        if (citizen.mAge >= 18) {
+            mCitizens.erase(std::find(mCitizens.begin(), mCitizens.end(), citizen));
+        }
+    }
+};
+
+class Block : public Building {
+    uint16_t mMaxNumberPerFloor;
+public:
+    Block(std::string buildingName, uint16_t floors, uint16_t maxNumberPerFloor) : Building("Block", std::move(buildingName)) {
+        mCoordinator = Person();
+        mCitizens.clear();
+        mMaxNumberPerFloor = maxNumberPerFloor;
+        mCitizens = std::vector<Person>(mMaxNumberPerFloor * floors, Person());
+    }
+    Building* operator+(const Person& owner) override {
+        if (mCoordinator == Person()) { mCoordinator = owner; }
+        return this;
+    }
+    Building* operator-() override {
+        mCoordinator = Person();
+        return this;
+    }
+    void add(const Person& citizen) override {
+        for (int i = 0; i < mCitizens.size(); i++) {
+            if (citizen == Person()) {
+                mCitizens.emplace_back(citizen);
+                break;
+            }
+        }
+    }
+    void remove(const Person& citizen) override {
+        if (citizen.mAge >= 18) {
+            *std::find(mCitizens.begin(), mCitizens.end(), citizen) = Person();
+        }
+    }
+};
+
+int main() {
+    std::vector<Building *> buildings;
+    std::string command, buildingName, type, name;
+    int age, nCityHalls = 0, nHospitals = 0, nPoliceStations = 0, nHouses = 0, nBlocks = 0, nPatients = 0, nBusted = 0, nDoctors = 0;
+    int nMayors = 0, nEmployees = 0, nCops = 0, check = 0;
+    double salary, avgAgeBusted = 0, avgSalaryMayors = 0, avgSalaryEmployees = 0, avgSalaryDoctors = 0, avgSalaryCops = 0;
+    uint16_t floors, maxNumber;
+    for (int i = 0; i < 4; i++) {
+        std::cin >> command;
+        if (command == "add") {
+            std::cin >> type;
+            if (type == "CityHall") { std::cin >> buildingName; buildings.emplace_back(new CityHall(buildingName)); nCityHalls++; }
+            else if (type == "Hospital") { std::cin >> buildingName; buildings.emplace_back(new Hospital(buildingName)); nHospitals++; }
+            else if (type == "PoliceStation") { std::cin >> buildingName; buildings.emplace_back(new PoliceStation(buildingName)); nPoliceStations++; }
+            else if (type == "House") { std::cin >> buildingName >> maxNumber; buildings.emplace_back(new House(buildingName, maxNumber)); nHouses++; }
+            else if (type == "Block") { std::cin >> buildingName >> floors >> maxNumber; buildings.emplace_back(new Block(buildingName, floors, maxNumber)); nBlocks++; }
+            else if (type == "coordinator") {
+                std::cin >> name >> age >> salary >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getBuildingName() == buildingName;
+                });
+                Building* current = **it + Person(name, age, salary);
+                *it = current;
+            } else if (type == "employee") {
+                std::cin >> name >> age >> salary >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getBuildingName() == buildingName;
+                });
+                Building* current = **it + Person(name, age, salary);
+                *it = current;
+            } else if (type == "citizen") {
+                std::cin >> name >> age >> salary >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getBuildingName() == buildingName;
+                });
+                (**it).add(Person(name, age, salary));
+            }
+        } else if (command == "remove") {
+            std::cin >> type;
+            if (type == "coordinator") {
+                std::cin >> name >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getCoordinator().mName == name && building->getBuildingName() == buildingName;
+                });
+                *it = -(**it);
+            } else if (type == "employee") {
+                std::cin >> name >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getCoordinator().mName == name && building->getBuildingName() == buildingName;
+                });
+                for (int j = 0; j < (*it)->getEmployeesSize(); j++) {
+                    if ((*it)->getCitizen(j).mName == name) {
+                        *it = **it - (*it)->getCitizen(j);
+                        break;
+                    }
+                }
+            } else if (type == "citizen") {
+                std::cin >> name >> buildingName;
+                auto it = std::find_if(buildings.begin(), buildings.end(), [&](Building* building) {
+                    return building->getCoordinator().mName == name && building->getBuildingName() == buildingName;
+                });
+                for (int j = 0; j < (*it)->getEmployeesSize(); j++) {
+                    if ((*it)->getCitizen(j).mName == name) {
+                        (**it).remove((*it)->getCitizen(j));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (nCityHalls >= 3 && nHospitals >= 2 && nPoliceStations >= 3 && nHouses >= 8 && nBlocks >= 4) { std::cout << "Type: Capital\n"; }
+    else if (nCityHalls >= 2 && nHospitals >= 1 && nPoliceStations >= 2 && nHouses >= 4 && nBlocks >= 1) { std::cout << "Type: Town\n"; }
+    else { std::cout << "Type: Village\n"; }
+    for (Building* building : buildings) {
+        if (building->getType() == "Hospital") {
+            nPatients += building->getCitizensSize();
+            for (int j = 0; j < building->getEmployeesSize(); j++) {
+                avgSalaryDoctors += building->getEmployee(j).mSalary;
+            }
+            nDoctors += building->getEmployeesSize();
+        } else if (building->getType() == "PoliceStation") {
+            for (int j = 0; j < building->getCitizensSize(); j++) {
+                avgAgeBusted += building->getCitizen(j).mAge;
+            }
+            nBusted += building->getCitizensSize();
+            for (int j = 0; j < building->getEmployeesSize(); j++) {
+                avgSalaryCops += building->getEmployee(j).mSalary;
+            }
+            nCops += building->getEmployeesSize();
+        } else if (building->getType() == "CityHall") {
+            for (int j = 0; j < building->getEmployeesSize(); j++) {
+                avgSalaryEmployees += building->getEmployee(j).mSalary;
+            }
+            nEmployees += building->getEmployeesSize();
+            avgSalaryMayors += building->getCoordinator().mSalary;
+            nMayors++;
+        }
+    }
+    std::cout << "Number of patients in hospitals: " << nPatients << "\n";
+    std::cout << "Average salary for doctors: " << (nDoctors == 0 ? 0 : avgSalaryDoctors / nDoctors) << "\n";
+    std::cout << "Average salary for cops: " << (nCops == 0 ? 0 : avgSalaryCops / nCops) << "\n";
+    std::cout << "Average salary for mayors: " << (nMayors == 0 ? 0 : avgSalaryMayors / nMayors) << "\n";
+    std::cout << "Average salary for city hall employees: " << (nEmployees == 0 ? 0 : avgSalaryEmployees / nEmployees) << "\n";
+    std::cout << "Average age of busted in police stations: " << (nBusted == 0 ? 0 : avgAgeBusted / nBusted) << "\n";
+    for (Building* building : buildings) {
+        if (building->getType() == "House" || building -> getType() == "Block") {
+            int numberOfPeople = building->getCoordinator() == Person() ? building->getCitizensSize() : building->getCitizensSize() + 1;
+            std::cout << "Number of people in " << building->getType() << " " << building->getBuildingName() << ": " << numberOfPeople << "\n";
+        }
+    }
+    std::cout << "Administrators of house and block: ";
+    for (Building* house : buildings) {
+        for (Building* block : buildings) {
+            if (house->getType() == "House" && block->getType() == "Block" && house->getCoordinator() == block->getCoordinator()) {
+                std::cout << house->getCoordinator().mName << " ";
+                check = 1;
+            }
+        }
+    }
+    if (check == 0) { std::cout << "Nobody\n"; }
+    else { printf("\n"); }
+    return 0;
+}
+

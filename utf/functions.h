@@ -10,6 +10,9 @@
 #include "structures.h"
 
 static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
+static std::unordered_map<std::string, std::string> entityMapper;
+static int segmentation_fault_case_index = 0;                           
+static char segmentation_fault_case[64][2][1024];
 
 #define TEST(suite_name, test_name)                                                                                                                                             \
     template<typename T>                                                                                                                                                        \
@@ -52,15 +55,25 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
              
 #define ASSERT_CLASS_CONSTRUCTOR(message, class_name, ...)                                                                                                                      \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
-	holder->m_assertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                    \
-								   std::is_constructible<class_name, ##__VA_ARGS__>::value == 1 });                                                                             \
-	if constexpr (std::is_constructible<class_name, ##__VA_ARGS__>::value)
-	
-#define ASSERT_CLASS_COPY_CONSTRUCTOR(message, class_name, ...)                                                                                                                 \
-	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
-	holder->m_assertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                    \
-								   !std::is_trivially_copy_constructible<class_name, ##__VA_ARGS__>::value == 1 });                                                             \
-	if constexpr (std::is_constructible<class_name, ##__VA_ARGS__>::value)
+	constexpr bool has_constructor = (((std::string_view(#__VA_ARGS__) == std::string_view("const "#class_name"&"))                                                             \
+								        || (std::string_view(#__VA_ARGS__) == std::string_view("const "#class_name" &")))                                                       \
+								        && ((!std::is_trivially_copy_constructible<class_name>::value == 1)                                                                     \
+								        && (std::is_copy_constructible<class_name>::value == 1))) ||                                                                            \
+	                                 (((std::string_view(#__VA_ARGS__) == std::string_view(#class_name"&&"))                                                                    \
+								        || (std::string_view(#__VA_ARGS__) == std::string_view(#class_name" &&")))                                                              \
+								        && ((!std::is_trivially_move_constructible<class_name>::value == 1)                                                                     \
+								        && (std::is_move_constructible<class_name>::value == 1))) ||                                                                            \
+	                                 ((std::string_view(#__VA_ARGS__) == std::string_view(""))                                                                                  \
+	                                    && (!std::is_trivially_default_constructible<class_name>::value == 1)                                                                   \
+	                                    && (std::is_default_constructible<class_name>::value == 1)) ||                                                                          \
+	                                 ((std::string_view(#__VA_ARGS__) != std::string_view(""))                                                                                  \
+	                                    && (std::string_view(#__VA_ARGS__) != std::string_view("const "#class_name"&"))                                                         \
+	                                    && (std::string_view(#__VA_ARGS__) != std::string_view("const "#class_name" &"))                                                        \
+	                                    && (std::string_view(#__VA_ARGS__) != std::string_view(#class_name"&&"))                                                                \
+	                                    && (std::string_view(#__VA_ARGS__) != std::string_view(#class_name" &&"))                                                               \
+	                                    && (std::is_constructible<class_name, ##__VA_ARGS__>::value == 1));                                                                     \
+	holder->m_assertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0, has_constructor });                                                                \
+	if constexpr (has_constructor)
 	
 #define ASSERT_CLASS_DESTRUCTOR(message, class_name)                                                                                                                            \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
@@ -98,17 +111,17 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
 	
 #define ASSERT_FUNCTION(function_name, message)                                                                                                                                 \
 	ASSERT_CALL_FUNCTION(function_name)                                                                                                                                         \
-	const bool __class___HACK___has_function_##function_name##__ = __has_function_##function_name##__<__HACK__>::value;                                                         \
+	const bool __class___GlobalFunctionWrapper___has_function_##function_name##__ = __has_function_##function_name##__<__GlobalFunctionWrapper__>::value;                                                         \
 	holder->m_assertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                    \
-								   __class___HACK___has_function_##function_name##__ == true });                                                                                \
+								   __class___GlobalFunctionWrapper___has_function_##function_name##__ == true });                                                               \
 	END
 	
 #define ASSERT_FUNCTION_SIGNATURE(function_name, template_postfix, message)                                                                                                     \
 	ASSERT_CALL_FUNCTION(function_name)                                                                                                                                         \
-	const bool __class___HACK___has_function_##function_name##_with_##template_postfix##__ = __has_function_with_sig_##template_postfix##__<__HACK__>::value;                   \
+	const bool __class___GlobalFunctionWrapper___has_function_##function_name##_with_##template_postfix##__ = __has_function_with_sig_##template_postfix##__<__GlobalFunctionWrapper__>::value;                   \
 	holder->m_assertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                    \
-			 __class___HACK___has_function_##function_name##_with_##template_postfix##__ == true });                                                                            \
-	if constexpr (__class___HACK___has_function_##function_name##_with_##template_postfix##__)
+			 __class___GlobalFunctionWrapper___has_function_##function_name##_with_##template_postfix##__ == true });                                                           \
+	if constexpr (__class___GlobalFunctionWrapper___has_function_##function_name##_with_##template_postfix##__)
 	
 #define ASSERT_CLASS_OPERATOR(class_name, operator_template, message)                                                                                                           \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
@@ -141,8 +154,8 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
 		__class_##class_name##_exists__ = true;
 		
 #define ASSERT_CALL_FUNCTION(function_name)                                                                                                                                     \
-	utf::call_if_class_defined<struct __HACK__>(holder, [&](utf::Holder<utf::any> *holder, auto* ptr_##function_name) constexpr -> void {                                       \
-		using __HACK__ = std::decay_t<decltype(*ptr_##function_name)>;
+	utf::call_if_class_defined<struct __GlobalFunctionWrapper__>(holder, [&](utf::Holder<utf::any> *holder, auto* ptr_##function_name) constexpr -> void {                      \
+		using __GlobalFunctionWrapper__ = std::decay_t<decltype(*ptr_##function_name)>;
 		
 #define CLASS(class_name)                                                                                                                                                       \
 	class class_name;                                                                                                                                                           \
@@ -261,10 +274,10 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
 			                                                                                                                                                                    \
 	template<typename T>                                                                                                                                                        \
 	struct __has_attribute_with_sig_##template_postfix##__<T, std::integral_constant<bool,                                                                                      \
-		                                   utf::sig_check<signature, &T::attribute_name>::value>> : std::true_type {};                                                          \
+		                                   utf::sig_check<signature T::*, &T::attribute_name>::value>> : std::true_type {};                                                     \
 	template<typename T>                                                                                                                                                        \
 	struct __has_entity_with_sig_##template_postfix##__<T, std::integral_constant<bool,                                                                                         \
-		                                   utf::sig_check<signature, &T::attribute_name>::value>> : std::true_type {}
+		                                   utf::sig_check<signature T::*, &T::attribute_name>::value>> : std::true_type {}
 		                                   
 #define CHECK_CLASS_OPERATOR(operator_name, operator_template)                                                                                                                  \
 	template<typename T, typename... Ts>                                                                                                                                        \
@@ -285,7 +298,14 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
 	};                                                                                                                                                                          \
 	                                                                                                                                                                            \
 	struct AmbiguitySeed_##operator_template {                                                                                                                                  \
-		void operator_name() {}                                                                                                                                                 \
+		NO_ARG(+) NO_ARG(-) NO_ARG(*) NO_ARG(&) NO_ARG(~) NO_ARG(!) NO_ARG(++) NO_ARG(--) NO_ARG(()) NO_ARG(->)                                                                 \
+		ONE_ARG(/)  ONE_ARG(%)  ONE_ARG(^)  ONE_ARG(|) ONE_ARG(<)  ONE_ARG(>)  ONE_ARG(<=) ONE_ARG(>=) ONE_ARG(<<) ONE_ARG(>>) ONE_ARG(<<=) ONE_ARG(>>=) ONE_ARG(||)            \
+		ONE_ARG(==) ONE_ARG(!=) ONE_ARG(&&) ONE_ARG(+=) ONE_ARG(-=) ONE_ARG(/=) ONE_ARG(%=) ONE_ARG(^=) ONE_ARG(&=) ONE_ARG(|=) ONE_ARG(*=) ONE_ARG([])  ONE_ARG(->*)           \
+		void operator,(size_t param) {}                                                                                                                                         \
+		void* operator new(size_t param) { int* r = new int; return r; }                                                                                                        \
+		void operator delete(void* param) {}                                                                                                                                    \
+		void* operator new[](size_t param) { int* r = new int; return r; }                                                                                                      \
+		void operator delete[](void* param) {}                                                                                                                                  \
 	};                                                                                                                                                                          \
 	                                                                                                                                                                            \
 	template<typename T>                                                                                                                                                        \
@@ -307,18 +327,43 @@ static std::unordered_map<std::string, std::vector<utf::Test<utf::any>>> suites;
 	struct __has_entity_with_sig_##template_postfix##__<T, std::integral_constant<bool,                                                                                         \
 		                                   utf::sig_check<signature, &T::operator_name>::value>> : std::true_type {}
 		                                   
-#define CHECK_CONTAINER(Container, Type)                                                                                                                                        \
-	auto __check_##Container##_of_##Type##__(std::Container<Type>* cont, uint64_t index) -> std::string {                                                                       \
-		std::Container<Type>::iterator it = cont->begin() + index;                                                                                                              \
-		if (it < cont->end()) {                                                                                                                                                 \
-			return utf::to_string(*it);                                                                                                                                         \
+#define CHECK_CONTAINER(container_name, template_postfix, ...)                                                                                                                  \
+	template <typename T, typename = void>                                                                                                                                      \
+	struct __is_##container_name##_of_##template_postfix##__ : std::false_type {};                                                                                              \
+		                                                                                                                                                                        \
+	template <typename T>                                                                                                                                                       \
+	struct __is_##container_name##_of_##template_postfix##__<T, typename std::enable_if<std::is_same<T, std::container_name<__VA_ARGS__>>::value>::type> : std::true_type {};   \
+	                                                                                                                                                                            \
+	auto __check_##container_name##_of_##template_postfix##__(auto cont, uint64_t index) -> std::string {                                                                       \
+		if constexpr (__is_##container_name##_of_##template_postfix##__<decltype(cont)>::value == 1) {                                                                          \
+			auto it = std::next(cont.begin(), index);                                                                                                                           \
+			if (std::distance(cont.begin(), it) >= 0 && std::distance(it, cont.end()) > 0) {                                                                                    \
+				if constexpr (!(std::string_view(#container_name) == "map" || std::string_view(#container_name) == "unordered_map" ||                                           \
+								std::string_view(#container_name) == "unordered_multimap" || std::string_view(#container_name) == "multimap")) {                                \
+					return utf::to_string(*it);                                                                                                                                 \
+				} else {                                                                                                                                                        \
+					return utf::to_string((*it).first) + " " + utf::to_string((*it).second);                                                                                    \
+				}                                                                                                                                                               \
+			} else {                                                                                                                                                            \
+				return "Index of out bound!";                                                                                                                                   \
+			}                                                                                                                                                                   \
 		} else {                                                                                                                                                                \
-			return "Index of out bound!";                                                                                                                                       \
+			return "Container type is incorrect!";                                                                                                                              \
 		}                                                                                                                                                                       \
 	}
+	
+#define SEGMENTATION_FAULT_MESSAGE(test_case, message)                                                                                                                          \
+	strcpy(segmentation_fault_case[segmentation_fault_case_index][0], test_case);                                                                                               \
+	strcpy(segmentation_fault_case[segmentation_fault_case_index][1], message);                                                                                                 \
+	segmentation_fault_case_index++;
 		                                   
 #define BEGIN
 #define END });
+#define COMMA_HACK ,
+#define PARAM void*
+#define RETURN void
+#define NO_ARG(sign) RETURN operator sign() {}
+#define ONE_ARG(sign) RETURN operator sign(PARAM param) {}
 	                                       
 template<typename T>
 constexpr void RUN(const std::unordered_map<std::string, std::vector<utf::Test<T>>>& suites, std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>>& requirements) {
@@ -347,6 +392,43 @@ constexpr void RUN(const std::unordered_map<std::string, std::vector<utf::Test<T
 
 	    }
     }
+}
+
+template<typename T>
+constexpr void RUN_ONE(std::unordered_map<std::string, std::vector<utf::Test<T>>>& suites, const std::string& full_name, std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>>& requirements) {
+
+	int64_t colon_index = full_name.find("::");
+	
+	const std::string& suite_name = full_name.substr(0, colon_index);
+	const std::string& test_name = full_name.substr(colon_index + 2, full_name.size());
+	
+	if (suite_name == std::string("Segmentation") && suites.count(suite_name) == 0) {
+		return;
+	}
+	
+	if (colon_index == std::string::npos || suites.count(suite_name) == 0) {
+		printf("Error while creating tests. Your test cases file contains at least one requirement that don't respect the convention name SUITE::TEST!\nABORT!\n");
+		return;
+	}
+    
+    const utf::Test<T> current_test = *std::find_if(suites[suite_name].begin(), suites[suite_name].end(), [&](const utf::Test<T> &test) {
+		return test.m_testName == test_name;
+	});
+
+    utf::Holder<T> holder;
+    (current_test.m_functionTester)(&holder);
+    requirements[full_name].first = true;
+
+    for (size_t assert_index = 0; assert_index < holder.m_assertions.size(); assert_index++) {
+    	
+        const utf::Assertion<T> assertion = holder.m_assertions[assert_index];
+        requirements[full_name].first &= assertion.m_check;
+        if (!assertion.m_check) {
+        	requirements[full_name].second.push_back(assertion.m_errorMessage);
+        }
+        
+    }
+
 }
 
 #endif

@@ -1,5 +1,5 @@
 **************************************************************************************************************************************************************************
-	@function    TEST                             Create a test which need to be passed as REQUIRED parameter in test file (vpl_evaluate.cases).
+	@function    TEST                             Create a test which need to be passed as REQUIRES parameter in test file (vpl_evaluate.cases).
 	@param       suite_name                       Name of the suite (it names something big to be tested).
 	@param       test_name                        Name of the test (it names a subclass of a suite).
 **************************************************************************************************************************************************************************

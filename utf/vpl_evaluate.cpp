@@ -28,6 +28,7 @@
 #include <string>
 #include <algorithm>
 #include <set>
+#include <chrono>
 
 using namespace std;
 
@@ -237,6 +238,7 @@ class TestCase {
 	vector< OutputChecker* > output;
 	string caseDescription;
 	float gradeReduction;
+	double executionTime;
 	float gradeReductionApplied;
 	string programOutputBefore, programOutputAfter, programInput;
 
@@ -253,9 +255,10 @@ public:
 	TestCase& operator=(const TestCase &o);
 	~TestCase();
 	TestCase(int id, const string &input, const vector<string> &output, const vector<string> &req, const vector<string> &depends,
-			const string &caseDescription, const float gradeReduction);
+			const string &caseDescription, const float gradeReduction, const float executionTime);
 	bool isCorrectResult();
 	float getGradeReduction();
+	double getExecutionTime();
 	void setGradeReductionApplied(float r);
 	float getGradeReductionApplied();
 	string getCaseDescription() const;
@@ -276,21 +279,21 @@ class Evaluation {
 	float grademin, grademax;
 	bool noGrade;
 	float grade;
-	int nerrors, nruns;
 	vector<TestCase> testCases;
-	char comments[MAXCOMMENTS + 1][MAXCOMMENTSLENGTH + 1];
-	char titles[MAXCOMMENTS + 1][MAXCOMMENTSTITLELENGTH + 1];
-	char titlesGR[MAXCOMMENTS + 1][MAXCOMMENTSTITLELENGTH + 1];
-	volatile int ncomments;
+	int nerrors, nruns;
 	volatile bool stopping;
 	static Evaluation *singlenton;
 	Evaluation();
 
 public:
+	char comments[MAXCOMMENTS + 1][MAXCOMMENTSLENGTH + 1];
+	char titles[MAXCOMMENTS + 1][MAXCOMMENTSTITLELENGTH + 1];
+	char titlesGR[MAXCOMMENTS + 1][MAXCOMMENTSTITLELENGTH + 1];
+	volatile int ncomments;
 	static Evaluation* getSinglenton();
 	static void deleteSinglenton();
 	void addTestCase(string &input, vector<string> &output, vector<string> &reqs, vector<string> &depends,
-			string &caseDescription, float &gradeReduction);
+			string &caseDescription, float &gradeReduction, double &executionTime);
 	static void removeLastNL(string &s);
 	static void removeLastWS(string &s);
 	static void removeFirstWS(string &s);
@@ -302,6 +305,16 @@ public:
 	void addFatalError(const char *m);
 	void runTests();
 	void outputEvaluation();
+	void setGrade(float grade);
+	float getGradeMin();
+	float getGradeMax();
+	float getGrade();
+	unsigned long int getTestCasesSize();
+	void setNErrors(int nerrors);
+	void setNRuns(int nruns);
+	int getNRuns();
+	int getNErrors();
+	TestCase& getTestCase(int index);
 };
 
 
@@ -330,9 +343,9 @@ Evaluation* Evaluation::singlenton = NULL;
 void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testCases, const TestCase &testCase, 
 							   const std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> &requirements, bool &allRequirementsPassed,
 							   std::unordered_map<std::string, std::vector<std::string>> &errorMessages);
+void computeAndCheckRequirements(const TestCase& testCase, std::unordered_map<std::string, std::vector<std::string>>& errorMessages, bool& allRequirementsPassed);
 std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> TestCase::requirements = std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>>{};
-
-
+void handler(int nSignum, siginfo_t* si, void* vcontext);
 
 /**
  * Class Tools Definitions
@@ -979,6 +992,7 @@ TestCase::TestCase(const TestCase &o) {
 	input=o.input;
 	caseDescription=o.caseDescription;
 	gradeReduction=o.gradeReduction;
+	executionTime=o.executionTime;
 	gradeReductionApplied=o.gradeReductionApplied;
 	programOutputBefore=o.programOutputBefore;
 	programOutputAfter=o.programOutputAfter;
@@ -1005,6 +1019,7 @@ TestCase& TestCase::operator=(const TestCase &o) {
 	input=o.input;
 	caseDescription=o.caseDescription;
 	gradeReduction=o.gradeReduction;
+	executionTime=o.executionTime;
 	gradeReductionApplied=o.gradeReductionApplied;
 	programOutputBefore=o.programOutputBefore;
 	programOutputAfter=o.programOutputAfter;
@@ -1032,7 +1047,7 @@ TestCase::~TestCase() {
 }
 
 TestCase::TestCase(int id, const string &input, const vector<string> &output, const vector<string> &req, const vector<string> &depends,
-		const string &caseDescription, const float gradeReduction) {
+		const string &caseDescription, const float gradeReduction, const float executionTime) {
 	this->id = id;
 	this->input = input;
 	for(int i=0;i<output.size(); i++){
@@ -1046,6 +1061,7 @@ TestCase::TestCase(int id, const string &input, const vector<string> &output, co
 	}
 	this->caseDescription = caseDescription;
 	this->gradeReduction = gradeReduction;
+	this->executionTime = executionTime;
 	outputTooLarge = false;
 	programTimeout = false;
 	executionError = false;
@@ -1063,6 +1079,11 @@ bool TestCase::isCorrectResult() {
 float TestCase::getGradeReduction() {
 	return gradeReduction;
 }
+
+double TestCase::getExecutionTime() {
+	return executionTime;
+}
+
 
 void TestCase::setGradeReductionApplied(float r) {
 	gradeReductionApplied=r;
@@ -1249,9 +1270,9 @@ void Evaluation::deleteSinglenton(){
 }
 
 void Evaluation::addTestCase(string &input, vector<string> &output, vector<string> &reqs, vector<string> &depends,
-		string &caseDescription, float &gradeReduction) {
+		string &caseDescription, float &gradeReduction, double &executionTime) {
 	testCases.push_back(TestCase(testCases.size() + 1, input, output, reqs, depends,
-			caseDescription, gradeReduction));
+			caseDescription, gradeReduction, executionTime));
 	
 	input = "";
 	output.resize(0);
@@ -1259,6 +1280,7 @@ void Evaluation::addTestCase(string &input, vector<string> &output, vector<strin
 	depends.resize(0);
 	caseDescription = "";
 	gradeReduction = std::numeric_limits<float>::min();
+	executionTime = 3600.0;
 }
 
 void Evaluation::removeLastNL(string &s) {
@@ -1309,6 +1331,47 @@ bool Evaluation::cutToEndTag(string &value, const string &endTag) {
 	return false;
 }
 
+void Evaluation::setGrade(float grade) {
+	this->grade = grade;
+}
+
+float Evaluation::getGrade() {
+	return grade;
+}
+
+float Evaluation::getGradeMax() {
+	return grademax;
+}
+
+
+float Evaluation::getGradeMin() {
+	return grademin;
+}
+
+int Evaluation::getNRuns() {
+	return nruns;
+}
+
+int Evaluation::getNErrors() {
+	return nerrors;
+}
+
+unsigned long int Evaluation::getTestCasesSize() {
+	return testCases.size();
+}
+
+void Evaluation::setNRuns(int nruns) {
+	this->nruns = nruns;
+}
+
+void Evaluation::setNErrors(int nerrors) {
+	this->nerrors = nerrors;
+}
+
+TestCase& Evaluation::getTestCase(int index) {
+	return testCases[index];
+}
+
 void Evaluation::loadTestCases(string fname) {
 	if(!Tools::existFile(fname)) return;
 	const char *CASE_TAG = "case=";
@@ -1319,8 +1382,9 @@ void Evaluation::loadTestCases(string fname) {
 	const char *GRADEREDUCTION_TAG = "gradereduction=";
 	const char *REQUIRES_TAG = "requires=";
 	const char *DEPENDS_ON_TAG = "dependencies=";
+	const char *EXECUTION_TIME_TAG = "exectime=";
 	enum {
-		regular, ininput, inoutput, inrequire, independ
+		regular, ininput, inoutput, inrequire, independ, inexectime
 	} state, newstate;
 	bool inCase = false;
 	vector<string> lines = Tools::splitLines(Tools::readFile(fname));
@@ -1332,10 +1396,12 @@ void Evaluation::loadTestCases(string fname) {
 	string output = "";
 	string require = "";
 	string depend = "";
+	string exectime = "";
 	string caseDescription = "";
 	string tag, value;
 
 	float gradeReduction = std::numeric_limits<float>::min();
+	double executionTime = 3600.0;
 	/*must be changed from String
 	 * to pair type (regexp o no) and string*/
 	vector<string> outputs;
@@ -1367,7 +1433,7 @@ void Evaluation::loadTestCases(string fname) {
 					continue; //Next line
 				}
 			} else if (tag.size() && (tag == OUTPUT_TAG || tag
-					== GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG)) {//New valid tag
+					== GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG || tag == EXECUTION_TIME_TAG)) {//New valid tag
 				state = regular;
 				//Go on to process the current tag
 			} else {
@@ -1388,7 +1454,7 @@ void Evaluation::loadTestCases(string fname) {
 					continue; //Next line
 				}
 			} else if (tag.size() && (tag == INPUT_TAG || tag == OUTPUT_TAG
-					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG)) {//New valid tag
+					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG || tag == EXECUTION_TIME_TAG)) {//New valid tag
 				removeLastNL(output);
 				outputs.push_back(output);
 				output = "";
@@ -1411,7 +1477,7 @@ void Evaluation::loadTestCases(string fname) {
 					continue; //Next line
 				}
 			} else if (tag.size() && (tag == INPUT_TAG || tag == OUTPUT_TAG
-					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG)) {//New valid tag
+					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG || tag == EXECUTION_TIME_TAG)) {//New valid tag
 				trim(require);
 				reqs.push_back(require);
 				require = "";
@@ -1434,7 +1500,7 @@ void Evaluation::loadTestCases(string fname) {
 					continue; //Next line
 				}
 			} else if (tag.size() && (tag == INPUT_TAG || tag == OUTPUT_TAG
-					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG)) {//New valid tag
+					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG || tag == EXECUTION_TIME_TAG)) {//New valid tag
 				trim(depend);
 				depends.push_back(depend);
 				depend = "";
@@ -1445,7 +1511,23 @@ void Evaluation::loadTestCases(string fname) {
 			}
 		}
 		if (state == regular && tag.size()) {
-			if (tag == DEPENDS_ON_TAG) {
+			if (tag == EXECUTION_TIME_TAG) {
+				inCase = true;
+			    value = Tools::trim(value);
+			    if (value.substr(value.size() - 2) == std::string("ms")) {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 2))) * 0.001;
+			    } else if (value.substr(value.size() - 2) == std::string("us")) {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 2))) * 0.000001;
+			    } else if (value.substr(value.size() - 2) == std::string("ns")) {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 2))) * 0.000000001;
+			    } else if (value.substr(value.size() - 1) == std::string("s")) {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 1)));
+			    } else if (value.substr(value.size() - 3) == std::string("min")) {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 1))) * 60;
+			    } else {
+			    	executionTime = stod(Tools::trim(value.substr(0, value.size() - 1)));
+			    }
+			} else if (tag == DEPENDS_ON_TAG) {
 				inCase = true;
 			    if (cutToEndTag(value, dependEnd)) {
 					depend = value;
@@ -1494,14 +1576,13 @@ void Evaluation::loadTestCases(string fname) {
 			} else if (tag == CASE_TAG) {
 				if (inCase) {
 					addTestCase(input, outputs, reqs, depends, caseDescription,
-							gradeReduction);
+							gradeReduction, executionTime);
 				}
 				inCase = true;
 				caseDescription = Tools::trim(value);
 			}
 		}
 	}
-	
 	//TODO review
 	if (state == inoutput) {
 		removeLastNL(output);
@@ -1516,7 +1597,7 @@ void Evaluation::loadTestCases(string fname) {
 		depends.push_back(depend);
 	}
 	if (inCase) { //Last case => save current
-		addTestCase(input, outputs, reqs, depends, caseDescription, gradeReduction);
+		addTestCase(input, outputs, reqs, depends, caseDescription, gradeReduction, executionTime);
 	}
 }
 
@@ -1542,6 +1623,12 @@ void Evaluation::addFatalError(const char *m) {
 }
 
 void Evaluation::runTests() {
+	RUN_ONE_TEST("Segmentation::Fault");
+	struct sigaction action;
+	memset(&action, 0, sizeof(struct sigaction));
+	action.sa_flags = SA_SIGINFO;
+	action.sa_sigaction = handler;
+	sigaction(SIGSEGV, &action, NULL);
 	std::unordered_map<std::string, std::vector<std::string>> errorMessages;
 	if (testCases.size() == 0) {
 		return;
@@ -1578,54 +1665,38 @@ void Evaluation::runTests() {
 		bool allRequirementsPassed = true;
 		bool singleDependsPassed = true;
 		bool allDependsPassed = true;
-		
-		int error_number = 1;
-		for (int j = 0; j < testCases[i].req.size(); j++) {
-		    std::vector<std::string> failedReqs;
-			bool requirementPassed = false;
-			std::string currentReq = testCases[i].req[j];
-			uint64_t orIndex = currentReq.find('|');
-			while (orIndex != std::string::npos) {
-				std::string parsedReq = currentReq.substr(0, orIndex);
-				trim(parsedReq);
-				requirementPassed |= TestCase::requirements[parsedReq].first;
-				if (!requirementPassed) {
-					failedReqs.push_back(parsedReq);
+
+		if (testCases[i].depends.empty()) {
+			computeAndCheckRequirements(testCases[i], errorMessages, allRequirementsPassed);
+		} else {
+			for (const std::string &name_dependency : testCases[i].depends) {
+				const TestCase &dependency = *std::find_if(testCases.begin(), testCases.end(), [&](const TestCase &tc) {
+					return tc.getCaseDescription() == name_dependency;
+				});
+				recursiveFindRequirementsAndDependencies(testCases, dependency, TestCase::requirements, singleDependsPassed, errorMessages);
+				if (!singleDependsPassed) {
+					allDependsPassed = false;
+					errorMessages[testCases[i].getCaseDescription()].push_back(std::string("Requirements for <") + name_dependency + std::string("> are not satisfied!\n"));
 				}
-				currentReq = currentReq.substr(orIndex + 1, currentReq.size());
-				orIndex = currentReq.find('|');
+				singleDependsPassed = true;
 			}
-			trim(currentReq);
-			requirementPassed |= TestCase::requirements[currentReq].first;
-			allRequirementsPassed &= requirementPassed;
-			if (!requirementPassed) {
-			    failedReqs.push_back(currentReq);
-			    for (std::string& failedReq : failedReqs) {
-    				for (int k = 0; k < TestCase::requirements[failedReq].second.size(); k++) {
-    					std::string str_error_number = std::to_string(error_number++) + std::string(") ");
-    					errorMessages[testCases[i].getCaseDescription()].push_back(str_error_number + TestCase::requirements[failedReq].second[k]);
-    				}
-			    }
-			}
-			
 		}
-		for (const std::string &name_dependency : testCases[i].depends) {
-			const TestCase &dependency = *std::find_if(testCases.begin(), testCases.end(), [&](const TestCase &tc) {
-				return tc.getCaseDescription() == name_dependency;
-			});
-			recursiveFindRequirementsAndDependencies(testCases, dependency, TestCase::requirements, singleDependsPassed, errorMessages);
-			if (!singleDependsPassed) {
-				allDependsPassed = false;
-				std::string str_error_number = std::to_string(error_number++) + std::string(") ");
-				errorMessages[testCases[i].getCaseDescription()].push_back(str_error_number + std::string("Requirements for <") + name_dependency + std::string("> are not satisfied!\n"));
-			}
-			singleDependsPassed = true;
+		
+		if (allDependsPassed) {
+			computeAndCheckRequirements(testCases[i], errorMessages, allRequirementsPassed);
 		}
+		
 		nruns++;
+		double elapsed_time_in_seconds = 0.0;
 		if (testCases[i].getOutputSize() > 0 && allRequirementsPassed && allDependsPassed) {
+			std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
 			testCases[i].runTest(timeout);
+			std::chrono::time_point<std::chrono::steady_clock> end_time = std::chrono::steady_clock::now();
+			std::chrono::duration<double> elapsed_time = end_time - start_time;
+			elapsed_time_in_seconds = elapsed_time.count();
 		}
-		if ((testCases[i].getOutputSize() > 0 && !testCases[i].isCorrectResult()) || !allRequirementsPassed || !allDependsPassed) {
+		bool inTime = testCases[i].getExecutionTime() >= elapsed_time_in_seconds;
+		if ((testCases[i].getOutputSize() > 0 && !testCases[i].isCorrectResult()) || !allRequirementsPassed || !allDependsPassed || !inTime) {
 			if (Stop::isTERMRequested())
 				break;
 			float gr = testCases[i].getGradeReduction();
@@ -1648,10 +1719,22 @@ void Evaluation::runTests() {
 					strncat(comments[ncomments], "Check the program description. Your program doesn't meet this requirements:\n\n",
 									MAXCOMMENTSLENGTH);
 				}
+				if (!inTime) {
+					std::string errorMessage = std::string("The execution time is too large, try to optimize your code!\nThe execution time for this test need to be ") + 
+									           std::to_string(testCases[i].getExecutionTime()) +
+									           std::string(" seconds, but your execution time is ") +
+									           std::to_string(elapsed_time_in_seconds) + " seconds.\n";
+					strncat(comments[ncomments], errorMessage.c_str(),
+									MAXCOMMENTSLENGTH);
+				}
+				uint64_t errorNumber = 1;
+				for (std::string &errorMessage : errorMessages[testCases[i].getCaseDescription()]) {
+					std::string strErrorNumber = std::to_string(errorNumber++) + ") ";
+					errorMessage = strErrorNumber + errorMessage;
+				}
 				for (const std::string &errorMessage : errorMessages[testCases[i].getCaseDescription()]) {
 					strncat(comments[ncomments], errorMessage.c_str(),
 								MAXCOMMENTSLENGTH);
-					error_number++;
 				}
 				ncomments++;
 			}
@@ -1705,12 +1788,59 @@ void Evaluation::outputEvaluation() {
 	fflush(stdout);
 }
 
+void handler(int nSignum, siginfo_t* si, void* vcontext) {
+	Evaluation* obj = Evaluation::getSinglenton();
+	for (int i = obj->getNRuns(); i < obj->getTestCasesSize(); i++) {
+		strncpy(obj->titles[obj->ncomments], obj->getTestCase(i).getCommentTitle().c_str(),
+				MAXCOMMENTSTITLELENGTH);
+		strncpy(obj->titlesGR[obj->ncomments], obj->getTestCase(i).getCommentTitle(true).c_str(),
+				MAXCOMMENTSTITLELENGTH);
+		strncpy(obj->comments[obj->ncomments], 
+				"Probably you have a SEGMENTATION FAULT! "
+				"This test will not run until you solve this error! "
+				"Please, check your code again!\n",
+	    		MAXCOMMENTSLENGTH);	
+	    strncat(obj->comments[obj->ncomments], "The error comes from <",
+	    		MAXCOMMENTSLENGTH);
+	    strncat(obj->comments[obj->ncomments], obj->getTestCase(obj->getNRuns()).getCaseDescription().c_str(),
+	    		MAXCOMMENTSLENGTH);	
+	    strncat(obj->comments[obj->ncomments], 
+				"> and what this test verifies is described below:\n\n1) ",
+	    		MAXCOMMENTSLENGTH);	
+	    for (int i = 0; i < segmentation_fault_case_index; i++) {
+	    	if (strcmp(segmentation_fault_case[i][0], obj->getTestCase(obj->getNRuns()).getCaseDescription().c_str()) == 0) {
+				strncat(obj->comments[obj->ncomments], segmentation_fault_case[i][1],
+						MAXCOMMENTSLENGTH);		
+				break;
+			}
+		}
+		if (segmentation_fault_case_index == 0) {
+			strncat(obj->comments[obj->ncomments], "This test doesn't have a default description. ASK LABORATORY PROFESSOR OR FRAMEWORK ADMINISTRATOR!",
+					MAXCOMMENTSLENGTH);	
+		}
+		strncat(obj->comments[obj->ncomments], "\n",
+	    		MAXCOMMENTSLENGTH);
+		obj->ncomments++;
+	}
+	float grademax = obj->getGradeMax();
+	int nruns = obj->getNRuns();
+	int nerrors = obj->getNErrors();
+	unsigned long int testCasesSize = obj->getTestCasesSize();
+	obj->setNErrors(nerrors + testCasesSize - nruns);
+	obj->setNRuns(testCasesSize);
+	obj->setGrade(grademax * (obj->getNRuns() - obj->getNErrors()) / obj->getTestCasesSize());
+	obj->outputEvaluation();
+  	ucontext_t* context = (ucontext_t*)vcontext;
+  	context->uc_mcontext.gregs[REG_RIP]++;
+  	abort();
+}
+
+
 void nullSignalCatcher(int n) {
-	//printf("Signal %d\n",n);
+
 }
 
 void signalCatcher(int n) {
-	//printf("Signal %d\n",n);
 	if (Stop::isTERMRequested()) {
 		Evaluation* obj = Evaluation::getSinglenton();
 		obj->outputEvaluation();
@@ -1729,9 +1859,9 @@ void signalCatcher(int n) {
 }
 
 void setSignalsCatcher() {
-	//Remove as signal controllers as possible
-	for(int i=0;i<31; i++)
+	for(int i=0;i<31; i++) {
 		signal(i, nullSignalCatcher);
+	}
 	signal(SIGINT, signalCatcher);
 	signal(SIGQUIT, signalCatcher);
 	signal(SIGILL, signalCatcher);
@@ -1742,6 +1872,42 @@ void setSignalsCatcher() {
 	signal(SIGTERM, signalCatcher);
 }
 
+void computeAndCheckRequirements(const TestCase& testCase, std::unordered_map<std::string, std::vector<std::string>>& errorMessages, bool& allRequirementsPassed) {
+	for (int j = 0; j < testCase.req.size(); j++) {
+		std::vector<std::string> failedReqs;
+		bool requirementPassed = false;
+		std::string currentReq = testCase.req[j];
+		int64_t orIndex = currentReq.find('|');
+		while (orIndex != std::string::npos) {
+			std::string parsedReq = currentReq.substr(0, orIndex);
+			Evaluation::trim(parsedReq);
+			RUN_ONE_TEST(parsedReq);
+			requirementPassed |= TestCase::requirements[parsedReq].first;
+			if (!requirementPassed) {
+				failedReqs.push_back(parsedReq);
+			}
+			currentReq = currentReq.substr(orIndex + 1, currentReq.size());
+			orIndex = currentReq.find('|');
+		}
+		Evaluation::trim(currentReq);
+		RUN_ONE_TEST(currentReq);
+		requirementPassed |= TestCase::requirements[currentReq].first;
+		allRequirementsPassed &= requirementPassed;
+		if (!requirementPassed) {
+			failedReqs.push_back(currentReq);
+			for (std::string& failedReq : failedReqs) {
+				for (int k = 0; k < TestCase::requirements[failedReq].second.size(); k++) {
+					std::vector<std::string>::iterator isErrorMessage = std::find(errorMessages[testCase.getCaseDescription()].begin(), 
+																				  errorMessages[testCase.getCaseDescription()].end(), TestCase::requirements[failedReq].second[k]);
+					if (isErrorMessage == errorMessages[testCase.getCaseDescription()].end()) { 
+						errorMessages[testCase.getCaseDescription()].push_back(TestCase::requirements[failedReq].second[k]);
+					}
+				}
+			}
+		}
+	}
+}
+
 void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testCases, const TestCase &testCase,
 							   const std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> &requirements, bool &allRequirementsPassed,
 							   std::unordered_map<std::string, std::vector<std::string>> &errorMessages) {
@@ -1749,7 +1915,7 @@ void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testC
 	for (int i = 0; i < testCase.req.size(); i++) {
 	    bool requirementPassed = false;
     	std::string currentReq = testCase.req[i];
-		uint64_t orIndex = currentReq.find('|');
+		int64_t orIndex = currentReq.find('|');
 		while (orIndex != std::string::npos) {
 			std::string parsedReq = currentReq.substr(0, orIndex);
 			Evaluation::trim(parsedReq);
@@ -1772,7 +1938,6 @@ void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testC
 }
 
 int main(int argc, char *argv[], const char **env) {
-	RUN_ALL_TESTS();
 	Timer::start();
 	TestCase::setEnvironment(env);
 	setSignalsCatcher();

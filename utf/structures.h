@@ -16,20 +16,10 @@
 #include <unordered_map>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 
 #define RUN_ALL_TESTS() RUN(suites, TestCase::requirements)
-
-typedef int64_t s64;
-typedef uint64_t u64; 
-typedef int32_t s32;
-typedef uint32_t u32;
-typedef int16_t s16;
-typedef uint16_t u16;
-typedef uint8_t s8;
-typedef int8_t u8;
-typedef float f32;
-typedef double f64;
-typedef long double f80;
+#define RUN_ONE_TEST(test_name) RUN_ONE(suites, test_name, TestCase::requirements)
 
 namespace utf {
 
@@ -62,14 +52,26 @@ struct Insertion {
     virtual ~Insertion() = default;
 };
 
+template <typename, typename = void>
+struct has_ostream_operator : std::false_type {};
+
+template <typename T>
+struct has_ostream_operator<T, decltype(void(std::declval<std::ostream&>() << std::declval<const T&>()))>: std::true_type {};
+
 struct any : public std::any {
     std::function<void(std::ostream&, const std::any&, char delim)> print;
 
     template <typename T>
     any(const T& t) : std::any(t) {
-        this->print = [](std::ostream& os, const std::any& a, char delim) { 
-    		os << std::any_cast<const T&>(a) << delim;
- 	    };
+    	if constexpr (has_ostream_operator<T>::value) {
+		    this->print = [](std::ostream& os, const std::any& a, char delim) { 
+				os << std::any_cast<const T&>(a) << delim;
+	 	    };
+	 	} else {
+	 		this->print = [](std::ostream& os, const std::any& a, char delim) { 
+				os << "Class doesn't have an ostream operator\n";
+	 	    };
+	 	}
     }
 };
 
@@ -115,15 +117,17 @@ std::string to_string(std::string str) {
 }
 
 template <typename T>
-std::enable_if_t<!std::is_convertible<T, std::string>::value, std::string> to_string(T&& value) {
+constexpr std::enable_if_t<!std::is_convertible<T, std::string>::value, std::string> to_string(T&& value) {
     using std::to_string;
     std::string converted;
-    if (std::is_floating_point<typename std::remove_reference<decltype(value)>::type>::value) {
+    if constexpr (std::is_floating_point<typename std::remove_reference<decltype(value)>::type>::value) {
     	std::stringstream ss;
 		ss << std::fixed << std::setprecision(0) << value * 1000;
 		converted = ss.str();
-    } else {
+    } else if constexpr (has_ostream_operator<T>::value) {
     	converted = std::to_string(std::forward<T>(value));
+    } else {
+    	converted = "Class doesn't have an ostream operator!";
     }
     return converted;
 }
