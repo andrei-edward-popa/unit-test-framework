@@ -3,9 +3,8 @@
  * @Copyright (C) 2020 Andrei-Edward Popa
  * @Author Andrei-Edward Popa <andrei_edward.popa@upb.ro>
  */
-
-#ifndef __STRUCTURES_H__
-#define __STRUCTURES_H__
+ 
+#pragma once
 
 #include <any>
 #include <string>
@@ -25,23 +24,23 @@ namespace utf {
 
 template<typename T>
 struct Assertion {
-	std::string m_errorMessage;
-    std::string m_operand;
-    T m_firstOperand;
-    T m_secondOperand;
-    bool m_check;
+	std::string mErrorMessage;
+    std::string mOperand;
+    T mFirstOperand;
+    T mSecondOperand;
+    bool mCheck;
 };
 
 template<typename T>
 struct Holder {
-    std::vector<Assertion<T>> m_assertions;
+    std::vector<Assertion<T>> mAssertions;
 };
 
 template<typename T>
 struct Test {
-    std::string m_suiteName;
-    std::string m_testName;
-    void (*m_functionTester)(Holder<T> *);
+    std::string mSuiteName;
+    std::string mTestName;
+    void (*mFunctionTester)(Holder<T> *);
 };
 
 template<typename T>
@@ -133,6 +132,4 @@ constexpr std::enable_if_t<!std::is_convertible<T, std::string>::value, std::str
 }
 
 }
-
-#endif
 

@@ -73,7 +73,7 @@ else
 		sed -i 's/class/struct/g' main_prog.txt
 		sed -i 's/private\s*:/public:/g' main_prog.txt
 		sed -i 's/protected\s*:/public:/g' main_prog.txt
-		sed -i 's/operator\s*=\s*/operatorEqual/g' main_prog.txt
+		sed -i 's/operator\s*=\s*(/operatorEqual(/g' main_prog.txt
 		
 		cp vpl_evaluate.cpp saved_vpl_evaluate.cpp
 		cat main_prog.txt > vpl_evaluate.cpp
@@ -82,9 +82,9 @@ else
 			sed -i 's/'$class':://g' student_impl.txt
 		done < classes.txt
 		if [ ! -s student_impl.txt ]; then
-			echo 'struct __GlobalFunctionWrapper__ {' > student_impl.txt
+			echo 'struct GlobalFunctionsWrapper {' > student_impl.txt
 		else
-			sed -i '1s/^/struct __GlobalFunctionWrapper__ {\n/' student_impl.txt
+			sed -i '1s/^/struct GlobalFunctionsWrapper {\n/' student_impl.txt
 		fi
 		echo "};" >> student_impl.txt
 		sed -i -E 's/\s*using\s+namespace\s+[A-Za-z0-9:_]+\s*;\s*//g' student_impl.txt
