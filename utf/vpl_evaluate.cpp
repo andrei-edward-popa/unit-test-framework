@@ -1618,7 +1618,7 @@ void Evaluation::addFatalError(const char *m) {
 	snprintf(titles[ncomments],MAXCOMMENTSTITLELENGTH,"%s",m);
 	snprintf(titlesGR[ncomments],MAXCOMMENTSTITLELENGTH,"%s (%.2f)",m,reduction);
 	strcpy(comments[ncomments],"");
-	ncomments++;
+	ncomments = ncomments + 1;
 	grade = grademin;
 }
 
@@ -1736,7 +1736,7 @@ void Evaluation::runTests() {
 					strncat(comments[ncomments], errorMessage.c_str(),
 								MAXCOMMENTSLENGTH);
 				}
-				ncomments++;
+				ncomments = ncomments + 1;
 			}
 		}
 	}
@@ -1820,7 +1820,7 @@ void handler(int nSignum, siginfo_t* si, void* vcontext) {
 		}
 		strncat(obj->comments[obj->ncomments], "\n",
 	    		MAXCOMMENTSLENGTH);
-		obj->ncomments++;
+		obj->ncomments = obj->ncomments + 1;
 	}
 	float grademax = obj->getGradeMax();
 	int nruns = obj->getNRuns();

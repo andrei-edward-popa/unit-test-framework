@@ -16,4 +16,4 @@ mv functions.h_ functions.h
 mv structures.h_ structures.h
 mv tests.h_ tests.h
 
-g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++17 -fno-diagnostics-color -o vpl_execution $SOURCE_FILES -lm -lutil
+g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++2b -fno-diagnostics-color -o vpl_execution $SOURCE_FILES -lm -lutil

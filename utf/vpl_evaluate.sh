@@ -93,7 +93,7 @@ else
 			sed -i '2s/^/class '${class}';\n/' student_impl.txt
 		done < "classes.txt"
 		cat student_impl.txt >> vpl_evaluate.cpp
-		echo "#undef main" >> vpl_evaluate.cpp
+		echo -e "\n#undef main" >> vpl_evaluate.cpp
 		cat saved_vpl_evaluate.cpp >> vpl_evaluate.cpp
 		
 		rm -f saved_vpl_evaluate.cpp
@@ -123,7 +123,7 @@ else
 			cat vpl_evaluate.cpp.save >> vpl_evaluate.cpp
 			check_program g++
 			SOURCE_FILES_WITHOUT_MAIN=${SOURCE_FILES//$main_file/}
-			g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++17 -fconcepts $SOURCE_FILES_WITHOUT_MAIN vpl_evaluate.cpp -g -lm -lutil -o .vpl_tester
+			g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++2b -fconcepts $SOURCE_FILES_WITHOUT_MAIN vpl_evaluate.cpp -g -lm -lutil -o .vpl_tester
 			mv functions.h functions.h_
 			mv tests.h tests.h_
 			mv structures.h structures.h_

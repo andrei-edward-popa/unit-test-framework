@@ -15,6 +15,7 @@ mrproper:
 	rm -f tui/tests.h
 	rm -f tcs/extract.conf
 	rm -f tcs/tests.h
+	rm -f tcs/vpl_evaluate.cases
 	rm -rf tcs/xml
 	rm -f *.txt
 	

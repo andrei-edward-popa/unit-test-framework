@@ -82,45 +82,64 @@ static char segmentation_fault_case[64][2][1024];
 #define ASSERT_ATTRIBUTE(class_name, attribute_name, message)                                                                                                                   \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
 	const bool __class_##class_name##_has_attribute_##attribute_name##__ = class_name##Wrapper::__has_attribute_##attribute_name##__<class_name>::value;                        \
-	const bool __class_##class_name##_has_attribute_with_##attribute_name##__ = class_name##Wrapper::__has_attribute_with_sig_##attribute_name##__<class_name>::value;          \
 	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
-								   __class_##class_name##_has_attribute_##attribute_name##__ == true &&                                                                         \
-								   __class_##class_name##_has_attribute_with_##attribute_name##__ == true });                                                                   \
+								   __class_##class_name##_has_attribute_##attribute_name##__ == true });                                                                        \
 	END
-
+	
+#define ASSERT_ATTRIBUTE_SIGNATURE(class_name, attribute_name, attribute_template, message)                                                                                     \
+	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
+	const bool __class_##class_name##_has_attribute_##attribute_name##_with_##attribute_template##__ = class_name##Wrapper::__has_attribute_with_sig_##attribute_template##__<class_name>::value; \
+	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
+			 __class_##class_name##_has_attribute_##attribute_name##_with_##attribute_template##__ == true });                                                                  \
+	END
+	
 #define ASSERT_METHOD(class_name, method_name, message)                                                                                                                         \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
 	const bool __class_##class_name##_has_method_##method_name##__ = class_name##Wrapper::__has_method_##method_name##__<class_name>::value;                                    \
-	const bool __class_##class_name##_has_method_with_##method_name##__ = class_name##Wrapper::__has_method_with_sig_##method_name##__<class_name>::value;                      \
 	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
-								   __class_##class_name##_has_method_##method_name##__ == true &&                                                                               \
-								   __class_##class_name##_has_method_with_##method_name##__ == true });                                                                         \
+								   __class_##class_name##_has_method_##method_name##__ == true });                                                                              \
+	END
+
+#define ASSERT_METHOD_SIGNATURE(class_name, method_name, method_template, message)                                                                                              \
+	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
+	const bool __class_##class_name##_has_method_##method_name##_with_##method_template##__ = class_name##Wrapper::__has_method_with_sig_##method_template##__<class_name>::value;                \
+	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
+			 __class_##class_name##_has_method_##method_name##_with_##method_template##__ == true });                                                                           \
 	END
 	
 #define ASSERT_OPERATOR(class_name, operator_template, message)                                                                                                                 \
 	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
 	const bool __class_##class_name##_has_operator_##operator_template##__ = class_name##Wrapper::__has_operator_##operator_template##__<class_name>::value;                    \
+	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
+								  __class_##class_name##_has_operator_##operator_template##__ == true });                                                                       \
+	END
+	
+#define ASSERT_OPERATOR_SIGNATURE(class_name, operator_name, operator_template, message)                                                                                        \
+	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
 	const bool __class_##class_name##_has_operator_with_##operator_template##__ = class_name##Wrapper::__has_operator_with_sig_##operator_template##__<class_name>::value;      \
 	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
-								  __class_##class_name##_has_operator_##operator_template##__ == true &&                                                                        \
-								  __class_##class_name##_has_operator_with_##operator_template##__ == true });                                                                  \
+			 __class_##class_name##_has_operator_with_##operator_template##__ == true });                                                                                       \
 	END
+
 	
 #define ASSERT_FUNCTION(function_name, message)                                                                                                                                 \
 	ASSERT_CALL_FUNCTION(function_name)                                                                                                                                         \
 	const bool __class_GlobalFunctionsWrapper_has_function_##function_name##__ = __has_function_##function_name##__<GlobalFunctionsWrapper>::value;                             \
-	const bool __class_GlobalFunctionsWrapper_has_function_with_##function_name##__ = __has_function_with_sig_##function_name##__<GlobalFunctionsWrapper>::value;               \
 	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
-								   __class_GlobalFunctionsWrapper_has_function_##function_name##__ == true &&                                                                   \
-								   __class_GlobalFunctionsWrapper_has_function_with_##function_name##__ == true });                                                             \
-	if constexpr (__class_GlobalFunctionsWrapper_has_function_##function_name##__ == true &&                                                                                    \
-			      __class_GlobalFunctionsWrapper_has_function_with_##function_name##__ == true)
+								   __class_GlobalFunctionsWrapper_has_function_##function_name##__ == true });                                                                  \
+	END
+	
+#define ASSERT_FUNCTION_SIGNATURE(function_name, function_template, message)                                                                                                    \
+	ASSERT_CALL_FUNCTION(function_name)                                                                                                                                         \
+	const bool __class_GlobalFunctionsWrapper_has_function_##function_name##_with_##function_template##__ = __has_function_with_sig_##function_template##__<GlobalFunctionsWrapper>::value;      \
+	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
+			 __class_GlobalFunctionsWrapper_has_function_##function_name##_with_##function_template##__ == true });                                                             \
+	if constexpr (__class_GlobalFunctionsWrapper_has_function_##function_name##_with_##function_template##__)
 	
 #define ASSERT_CLASS(class_name, message)                                                                                                                                       \
-	ASSERT_CALL_CLASS(class_name)                                                                                                                                               \
+	ASSERT_CALL_CLASS(class_name) { } END                                                                                                                                       \
 	holder->mAssertions.push_back(utf::Assertion<T>{ std::string(message) + "\n", "", 0, 0,                                                                                     \
-									   __class_##class_name##_exists__ == true });                                                                                              \
-	END
+									   __class_##class_name##_exists__ == true });
     
 #define ASSERT_CALL_CLASS(class_name)                                                                                                                                           \
 	utf::call_if_class_defined<struct class_name>(holder, [&](utf::Holder<utf::any> *holder, auto* ptr_##class_name) constexpr -> void {                                        \
@@ -131,7 +150,7 @@ static char segmentation_fault_case[64][2][1024];
 	utf::call_if_class_defined<struct GlobalFunctionsWrapper>(holder, [&](utf::Holder<utf::any> *holder, auto* ptr_##function_name) constexpr -> void {                         \
 		using GlobalFunctionsWrapper = std::decay_t<decltype(*ptr_##function_name)>;
 		
-#define CHECK_ATTRIBUTE(attribute_name, attribute_type)                                                                                                                         \
+#define REGISTER_ATTRIBUTE(attribute_name)                                                                                                                                      \
 	template<class T>                                                                                                                                                           \
 	static auto attribute_name(T* obj) -> decltype(obj->attribute_name) {                                                                                                       \
 		return obj->attribute_name;                                                                                                                                             \
@@ -157,16 +176,17 @@ static char segmentation_fault_case[64][2][1024];
 	struct __has_attribute_##attribute_name##__ {                                                                                                                               \
 		static const bool value = utf::has_member<Alias_##attribute_name<utf::ambiguate<T, AmbiguitySeed_##attribute_name>>,                                                    \
 		                                     Alias_##attribute_name<AmbiguitySeed_##attribute_name>>::value;                                                                    \
-	};                                                                                                                                                                          \
-	                                                                                                                                                                            \
-	template<typename T, typename = std::true_type>                                                                                                                             \
-	struct __has_attribute_with_sig_##attribute_name##__ : std::false_type {};                                                                                                  \
+	}
+	                                
+#define REGISTER_ATTRIBUTE_SIGNATURE(attribute_name, attribute_type, attribute_template)                                                                                        \
+	template<typename Class, typename = std::true_type>                                                                                                                         \
+	struct __has_attribute_with_sig_##attribute_template##__ : std::false_type {};                                                                                              \
 			                                                                                                                                                                    \
-	template<typename T>                                                                                                                                                        \
-	struct __has_attribute_with_sig_##attribute_name##__<T, std::integral_constant<bool,                                                                                        \
-		                                   utf::sig_check<attribute_type T::*, &T::attribute_name>::value>> : std::true_type {}
+	template<typename Class>                                                                                                                                                    \
+	struct __has_attribute_with_sig_##attribute_template##__<Class, std::integral_constant<bool,                                                                                \
+		                                   utf::sig_check<attribute_type Class::*, &Class::attribute_name>::value>> : std::true_type {}
 	
-#define CHECK_METHOD(method_name, return_type, ...)                                                                                                                             \
+#define REGISTER_METHOD(method_name)                                                                                                                                            \
 	template<typename T, typename... Ts>                                                                                                                                        \
 	static auto method_name(T* obj, Ts... args) -> decltype(obj->method_name(args...)) {                                                                                        \
 		return obj->method_name(args...);                                                                                                                                       \
@@ -192,16 +212,17 @@ static char segmentation_fault_case[64][2][1024];
 	struct __has_method_##method_name##__ {                                                                                                                                     \
 		static const bool value = utf::has_member<Alias_method_##method_name<utf::ambiguate<T, AmbiguitySeed_##method_name>>,                                                   \
 		                                     Alias_method_##method_name<AmbiguitySeed_##method_name>>::value;                                                                   \
-	};                                                                                                                                                                          \
-	                                                                                                                                                                            \
-	template<typename T, typename = std::true_type>                                                                                                                             \
-	struct __has_method_with_sig_##method_name##__ : std::false_type {};                                                                                                        \
+	}
+
+#define REGISTER_METHOD_SIGNATURE(method_name, method_signature, method_template)                                                                                               \
+	template<typename Class, typename = std::true_type>                                                                                                                         \
+	struct __has_method_with_sig_##method_template##__ : std::false_type {};                                                                                                    \
 		                                                                                                                                                                        \
-	template<typename T>                                                                                                                                                        \
-	struct __has_method_with_sig_##method_name##__<T, std::integral_constant<bool,                                                                                              \
-	                                       utf::sig_check<return_type(T::*)(POP_LAST(__VA_ARGS__)) LAST(__VA_ARGS__), &T::method_name>::value>> : std::true_type {};
+	template<typename Class>                                                                                                                                                    \
+	struct __has_method_with_sig_##method_template##__<Class, std::integral_constant<bool,                                                                                      \
+	                                       utf::sig_check<method_signature, &Class::method_name>::value>> : std::true_type {}
 	                                       
-#define CHECK_OPERATOR(operator_name, operator_template, return_type, ...)                                                                                                      \
+#define REGISTER_OPERATOR(operator_name, operator_template)                                                                                                                     \
 	template<typename T, typename... Ts>                                                                                                                                        \
 	static auto operator_template(T* obj, Ts... args) -> decltype(obj->operator_name(args...)) {                                                                                \
 		return obj->operator_name(args...);                                                                                                                                     \
@@ -234,16 +255,17 @@ static char segmentation_fault_case[64][2][1024];
 	struct __has_operator_##operator_template##__ {                                                                                                                             \
 		static const bool value = utf::has_member<Alias_operator_##operator_template<utf::ambiguate<T, AmbiguitySeed_##operator_template>>,                                     \
 		                                     Alias_operator_##operator_template<AmbiguitySeed_##operator_template>>::value;                                                     \
-	};                                                                                                                                                                          \
-	                                                                                                                                                                            \
-    template<typename T, typename = std::true_type>                                                                                                                             \
+	}
+	                                       
+#define REGISTER_OPERATOR_SIGNATURE(operator_name, operator_identifier_name, operator_signature, operator_template)                                                             \
+	template<typename Class, typename = std::true_type>                                                                                                                         \
 	struct __has_operator_with_sig_##operator_template##__ : std::false_type {};                                                                                                \
 		                                                                                                                                                                        \
-	template<typename T>                                                                                                                                                        \
-	struct __has_operator_with_sig_##operator_template##__<T, std::integral_constant<bool,                                                                                      \
-	                                       utf::sig_check<return_type(T::*)(POP_LAST(__VA_ARGS__)) LAST(__VA_ARGS__), &T::operator_name>::value>> : std::true_type {};
+	template<typename Class>                                                                                                                                                    \
+	struct __has_operator_with_sig_##operator_template##__<Class, std::integral_constant<bool,                                                                                  \
+	                                       utf::sig_check<operator_signature, &Class::operator_name>::value>> : std::true_type {}
 	
-#define CHECK_FUNCTION(function_name, return_type, ...)                                                                                                                         \
+#define REGISTER_FUNCTION(function_name)                                                                                                                                        \
 	template<typename T, typename... Ts>                                                                                                                                        \
 	static auto function_name(T* obj, Ts... args) -> decltype(obj->function_name(args...)) {                                                                                    \
 		return obj->function_name(args...);                                                                                                                                     \
@@ -269,24 +291,25 @@ static char segmentation_fault_case[64][2][1024];
 	struct __has_function_##function_name##__ {                                                                                                                                 \
 		static const bool value = utf::has_member<Alias_function_##function_name<utf::ambiguate<T, AmbiguitySeed_##function_name>>,                                             \
 		                                     Alias_function_##function_name<AmbiguitySeed_##function_name>>::value;                                                             \
-	};                                                                                                                                                                          \
-	                                                                                                                                                                            \
-	template<typename T, typename = std::true_type>                                                                                                                             \
-	struct __has_function_with_sig_##function_name##__ : std::false_type {};                                                                                                    \
+	}
+	                                      
+#define REGISTER_FUNCTION_SIGNATURE(function_name, function_signature, function_template)                                                                                       \
+	template<typename Function, typename = std::true_type>                                                                                                                      \
+	struct __has_function_with_sig_##function_template##__ : std::false_type {};                                                                                                \
 		                                                                                                                                                                        \
-	template<typename T>                                                                                                                                                        \
-	struct __has_function_with_sig_##function_name##__<T, std::integral_constant<bool,                                                                                          \
-	                                       utf::sig_check<return_type(T::*)(__VA_ARGS__), &T::function_name>::value>> : std::true_type {}
+	template<typename Function>                                                                                                                                                 \
+	struct __has_function_with_sig_##function_template##__<Function, std::integral_constant<bool,                                                                               \
+	                                       utf::sig_check<function_signature, &Function::function_name>::value>> : std::true_type {}
 		                                   
-#define CHECK_CONTAINER(container_name, template_postfix, ...)                                                                                                                  \
+#define REGISTER_CONTAINER(container_name, container_template, ...)                                                                                                             \
 	template <typename T, typename = void>                                                                                                                                      \
-	struct __is_##container_name##_of_##template_postfix##__ : std::false_type {};                                                                                              \
+	struct __is_##container_name##_of_##container_template##__ : std::false_type {};                                                                                            \
 		                                                                                                                                                                        \
 	template <typename T>                                                                                                                                                       \
-	struct __is_##container_name##_of_##template_postfix##__<T, typename std::enable_if<std::is_same<T, std::container_name<__VA_ARGS__>>::value>::type> : std::true_type {};   \
+	struct __is_##container_name##_of_##container_template##__<T, typename std::enable_if<std::is_same<T, std::container_name<__VA_ARGS__>>::value>::type> : std::true_type {}; \
 	                                                                                                                                                                            \
-	auto __check_##container_name##_of_##template_postfix##__(auto cont, uint64_t index) -> std::string {                                                                       \
-		if constexpr (__is_##container_name##_of_##template_postfix##__<decltype(cont)>::value == 1) {                                                                          \
+	auto __check_##container_name##_of_##container_template##__(auto cont, uint64_t index) -> std::string {                                                                     \
+		if constexpr (__is_##container_name##_of_##container_template##__<decltype(cont)>::value == 1) {                                                                        \
 			auto it = std::next(cont.begin(), index);                                                                                                                           \
 			if (std::distance(cont.begin(), it) >= 0 && std::distance(it, cont.end()) > 0) {                                                                                    \
 				if constexpr (!(std::string_view(#container_name) == "map" || std::string_view(#container_name) == "unordered_map" ||                                           \
@@ -303,7 +326,7 @@ static char segmentation_fault_case[64][2][1024];
 		}                                                                                                                                                                       \
 	}
 	
-#define REFLECT_SEGMENTATION_FAULT(test_case, message)                                                                                                                          \
+#define REGISTER_SEGMENTATION_FAULT(test_case, message)                                                                                                                         \
 	strcpy(segmentation_fault_case[segmentation_fault_case_index][0], test_case);                                                                                               \
 	strcpy(segmentation_fault_case[segmentation_fault_case_index][1], message);                                                                                                 \
 	segmentation_fault_case_index++;
@@ -316,52 +339,47 @@ static char segmentation_fault_case[64][2][1024];
 #define NO_ARG(sign) RETURN operator sign() {}
 #define ONE_ARG(sign) RETURN operator sign(PARAM param) {}
 
-#define NARGS_HELPER(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
-#define NARGS(...) NARGS_HELPER(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1)
+#define NARGS_HELPER(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define NARGS(...) NARGS_HELPER(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
-#define PRIMITIVE_CONCAT(x, y) x ## y
-#define CONCAT(x, y) PRIMITIVE_CONCAT(x, y)
+#define PRIMITIVE_CONCAT(first, second) first ## second
+#define CONCAT(first, second) PRIMITIVE_CONCAT(first, second)
 
 #define POP_LAST(...) CONCAT(POP_LAST_, NARGS(__VA_ARGS__))(__VA_ARGS__)
-#define POP_LAST_1(x1)
-#define POP_LAST_2(x1, x2) x1
-#define POP_LAST_3(x1, x2, x3) x1, x2
-#define POP_LAST_4(x1, x2, x3, x4) x1, x2, x3
-#define POP_LAST_5(x1, x2, x3, x4, x5) x1, x2, x3, x4
-#define POP_LAST_6(x1, x2, x3, x4, x5, x6) x1, x2, x3, x4, x5
-#define POP_LAST_7(x1, x2, x3, x4, x5, x6, x7) x1, x2, x3, x4, x5, x6
-#define POP_LAST_8(x1, x2, x3, x4, x5, x6, x7, x8) x1, x2, x3, x4, x5, x6, x7
-#define POP_LAST_9(x1, x2, x3, x4, x5, x6, x7, x8, x9) x1, x2, x3, x4, x5, x6, x7, x8
-#define POP_LAST_10(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) x1, x2, x3, x4, x5, x6, x7, x8, x9
+#define POP_LAST_1(_1)
+#define POP_LAST_2(_1, _2) _1
+#define POP_LAST_3(_1, _2, _3) _1, _2
+#define POP_LAST_4(_1, _2, _3, _4) _1, _2, _3
+#define POP_LAST_5(_1, _2, _3, _4, _5) _1, _2, _3, _4
+#define POP_LAST_6(_1, _2, _3, _4, _5, _6) _1, _2, _3, _4, _5
+#define POP_LAST_7(_1, _2, _3, _4, _5, _6, _7) _1, _2, _3, _4, _5, _6
+#define POP_LAST_8(_1, _2, _3, _4, _5, _6, _7, _8) _1, _2, _3, _4, _5, _6, _7
+#define POP_LAST_9(_1, _2, _3, _4, _5, _6, _7, _8, _9) _1, _2, _3, _4, _5, _6, _7, _8
+#define POP_LAST_10(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10) _1, _2, _3, _4, _5, _6, _7, _8, _9
 
 #define LAST(...) CONCAT(LAST_, NARGS(__VA_ARGS__))(__VA_ARGS__)
-#define LAST_1(x1) x1
-#define LAST_2(x1, x2) x2
-#define LAST_3(x1, x2, x3) x3
-#define LAST_4(x1, x2, x3, x4) x4
-#define LAST_5(x1, x2, x3, x4, x5) x5
-#define LAST_6(x1, x2, x3, x4, x5, x6) x6
-#define LAST_7(x1, x2, x3, x4, x5, x6, x7) x7
-#define LAST_8(x1, x2, x3, x4, x5, x6, x7, x8) x8
-#define LAST_9(x1, x2, x3, x4, x5, x6, x7, x8, x9) x9
-#define LAST_10(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) x10
+#define LAST_1(_1) _1
+#define LAST_2(_1, _2) _2
+#define LAST_3(_1, _2, _3) _3
+#define LAST_4(_1, _2, _3, _4) _4
+#define LAST_5(_1, _2, _3, _4, _5) _5
+#define LAST_6(_1, _2, _3, _4, _5, _6) _6
+#define LAST_7(_1, _2, _3, _4, _5, _6, _7) _7
+#define LAST_8(_1, _2, _3, _4, _5, _6, _7, _8) _8
+#define LAST_9(_1, _2, _3, _4, _5, _6, _7, _8, _9) _9
+#define LAST_10(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10) _10
 
-#define REFLECT_CLASS(class_name)                                                                                                                                               \
+#define PRIMITIVE_HELPER_NARGS(_1, N, ...) N
+#define PRIMITIVE_NARGS(...) PRIMITIVE_HELPER_NARGS(__VA_OPT__(,) Const, __VA_ARGS__)
+#define EVEN_MORE_INDIRECT(...) LAST(__VA_ARGS__) __VA_OPT__(,)
+#define CONST_NAME(...) PRIMITIVE_NARGS(EVEN_MORE_INDIRECT(LAST(__VA_ARGS__)))
+#define CONST_CONCAT(item, ...) CONCAT(item,  CONST_NAME(__VA_ARGS__))
+
+
+#define REGISTER_CLASS(class_name)                                                                                                                                              \
 	class class_name;                                                                                                                                                           \
 	static bool __class_##class_name##_exists__ = false;                                                                                                                        \
 	struct class_name##Wrapper
-	
-#define REFLECT_ATTRIBUTE(attribute_name, attribute_type)                                                                                                                       \
-	CHECK_ATTRIBUTE(attribute_name, attribute_type);
-	
-#define REFLECT_METHOD(method_name, return_type, ...)                                                                                                                           \
-	CHECK_METHOD(method_name, return_type, __VA_ARGS__);
-	
-#define REFLECT_OPERATOR(operator_name, operator_template, return_type, ...)                                                                                                    \
-	CHECK_OPERATOR(operator_name, operator_template, return_type, __VA_ARGS__);
-	
-#define REFLECT_FUNCTION(function_name, return_type, ...)                                                                                                                       \
-	CHECK_FUNCTION(function_name, return_type, __VA_ARGS__);
 	                                       
 template<typename T>
 constexpr void RUN(const std::unordered_map<std::string, std::vector<utf::Test<T>>>& suites, std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>>& requirements) {

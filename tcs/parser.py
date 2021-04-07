@@ -19,9 +19,9 @@ DERIVED_COMPOUND_EXTRACT =     './/derivedcompoundref/text()'
 DESTRUCTOR               =     "DESTRUCTOR:-:     CLASS=%s | ARGS=%s\n"
 CONSTRUCTOR              =     "CONSTRUCTOR:-:    CLASS=%s | ARGS=%s\n"
 ATTRIBUTE                =     "ATTRIBUTE:-:      CLASS=%s | NAME=%s | TYPE=%s\n"
-METHOD                   =     "METHOD:-:         CLASS=%s | NAME=%s | RETURN=%s | ARGS=%s\n"
+METHOD                   =     "METHOD:-:         CLASS=%s | NAME=%s | RETURN=%s | ARGS=%s | CONST=%s\n"
 FUNCTION                 =     "FUNCTION:-:       NAME=%s | RETURN=%s | ARGS=%s\n"
-OPERATOR                 =     "OPERATOR:-:       CLASS=%s | NAME=%s | RETURN=%s | ARGS=%s\n"
+OPERATOR                 =     "OPERATOR:-:       CLASS=%s | NAME=%s | RETURN=%s | ARGS=%s | CONST=%s\n"
 ABSTRACT                 =     "ABSTRACT:-:       CLASS=%s\n"
 INHERITANCE              =     "INHERITANCE:-:    CLASS=%s | DERIVED=%s\n"
 CLASS                    =     "CLASS:-:          CLASS=%s\n"
@@ -143,14 +143,11 @@ for xml_file in glob.glob(PATH_TO_FILES):
                         parsed_args[i] = parsed_args[i][:-1]
                 
                 params = ",".join(parsed_args)
-                params = "" if (is_const_qualified == 1 and params == "None ") else params
-                params = params if (params == "None " or len(params.strip()) == 0) else params.strip() + ", "
-                params = params + "const" if (is_const_qualified == 1) else params
                 
                 if not (entity_name.isidentifier()):
-                    out_file.write(OPERATOR % (class_name, entity_name, return_type, params))
+                    out_file.write(OPERATOR % (class_name, entity_name, return_type, params, "True" if is_const_qualified == 1 else "False"))
                 else:
-                    out_file.write(METHOD % (class_name, entity_name, return_type, params))
+                    out_file.write(METHOD % (class_name, entity_name, return_type, params, "True" if is_const_qualified == 1 else "False"))
                     
                     
                         
