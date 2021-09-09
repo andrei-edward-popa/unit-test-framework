@@ -1,0 +1,235 @@
+**************************************************************************************************************************************************************************
+	@function    TEST                             Create a test which need to be passed as REQUIRED parameter in test file (vpl_evaluate.cases).
+	@param       suite_name                       Name of the suite (it names something big to be tested).
+	@param       test_name                        Name of the test (it names a subclass of a suite).
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@functions   ASSERT_EQUAL                     Test if 2 parameters are equal.
+				 ASSERT_NOT_EQUAL				  Test if 2 parameters are not equal.
+				 ASSERT_LESS                      Test if first argument is less than the second argument.
+				 ASSERT_GREATER                   Test if first argument is greater than the second argument.
+				 ASSERT_LESS_OR_EQUAL             Test if first argument is less than or equal with the second argument.
+				 ASSERT_GREATER_OR_EQUAL          Test if first argument is greater than or equal with the second argument.
+	@param       first_argument                   First argument of the comparison operation.
+	@param       second_argument                  Second argument of the comparison operation.
+	@param       message                          Message to be printed if something goes wrong.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CLASS                            Create a tester for a class
+	@param       class_name                       Name of the class which need to be tested.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_CLASS_ATTRIBUTE            Create a tester for an attribute in any class.
+	@param       attribute_name                   Name of the attribute which need to be tested.
+	
+	@note                                         1) This function creates a function called '__check_attribute_##attribute_name##__'.
+												  With this function we can get values from our attributes from a class because
+												  we can't use the standard way. This function needs only one parameters, the address
+												  of a class object. Use 'auto' keyword to store the value of the attribute.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_CLASS_METHOD               Create a tester for a method in any class.
+	@param       method_name                      Name of the method which need to be tested.
+	
+	@note                                         1) This function creates a function called '__check_method_##method_name##__'.
+												  With this function we can get return values from our methods from a class because
+												  we can't use the standard way. First parameter of this function is the address
+												  of a class object. Then, we need to pass the parameters of the method if they exist.
+												  Use 'auto' keyword to store the value of the return value of method.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_FUNCTION                   Create a tester for a function declared in global scope.
+	@param       function_name                    Name of the function which need to be tested.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_CLASS_ATTRIBUTE_SIGNATURE  Create a tester for attribute type in any class.
+	@param       attribute_name                   Name of the attribute need to be tested.
+	@param       signature                        Type of attribute to be checked.
+	@param       template_postfix                 It can be any valid name. BUT REMEMBER IT!
+	
+	@note                                         1) Signature of the attribute need to be in pointer to member function format, so
+												  instead of a 'type' you need to put 'type T::*'.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_CLASS_METHOD_SIGNATURE     Create a tester for method signature in any class.
+	@param       method_name                      Name of the method need to be tested.
+	@param       signature                        Signature for method to be checked.
+	@param       template_postfix                 It can be any valid name. BUT REMEMBER IT!
+	
+	@note                                         1) Signature of the method need to be in pointer to member 
+												  function format, so instead of a '*' you need to put 'T::*'.
+**************************************************************************************************************************************************************************
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    CHECK_FUNCTION_SIGNATURE         Create a tester for function signature.
+	@param       function_name                    Name of the function need to be tested.
+	@param       signature                        Signature for function to be checked.
+	@param       template_postfix                 It can be any valid name. BUT REMEMBER IT!
+	
+	@note                                         1) Signature of the function need to be in pointer to member 
+												  function format, so instead of a '*' you need to put 'T::*'.
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_FUNCTION                  Checks if a function has been defined.
+	@param       function_name                    Name of the function to be checked. 
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function needs to begin with "BEGIN {".
+												  2) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_FUNCTION_SIGNATURE        Checks if a function has been defined.
+	@param       function_name                    Name of the function to be checked.
+	@param       template_postfix                 It can be any valid name, but need to be the same name when define CHECK_FUNCTION_SIGNATURE.
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note									      1) This function needs to begin with "BEGIN {".
+												  2) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS                     Checks if a class has been defined.
+	@param       class_name                       Name of the class to be checked. 
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function needs to begin with "BEGIN {".
+												  2) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS_ATTRIBUTE           Checks if an attribute in a given class has been defined (depends on CHECK_CLASS_ATTRIBUTE).
+	@param       class_name                       Name of the class to be checked.
+	@param       attribute_name                   Name of the attribute in class 'class_name' to be checked. 
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function depends on CHECK_CLASS_ATTRIBUTE function.
+												  2) This function needs to begin with "BEGIN {".
+												  3) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS_METHOD              Checks if a method in a given class has been defined.
+	@param       class_name                       Name of the class to be checked.
+	@param       method_name                      Name of the method in class 'class_name' to be checked. 
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function depends on CHECK_CLASS_METHOD function.
+												  2) This function needs to begin with "BEGIN {".
+												  3) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS_ATTRIBUTE_SIGNATURE Checks if an attribute in a given class has a given type.
+	@param       class_name                       Name of the class to be checked.
+	@param       attribute_name                   Name of the attribute in class 'class_name' to be checked. 
+	@param       template_postfix                 It can be any valid name, but need to be the same name when define CHECK_CLASS_ATTRIBUTE_SIGNATURE.
+												  
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function depends on CHECK_CLASS_ATTRIBUTE_SIGNATURE function. 
+												  2) This function needs to begin with "BEGIN {".
+												  3) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS_METHOD_SIGNATURE    Checks if a method in a given class has a given signature.
+	@param       class_name                       Name of the class to be checked.
+	@param       method_name                      Name of the method in class 'class_name' to be checked. 
+	@param       template_postfix                 It can be any valid name, but need to be the same name when define CHECK_CLASS_METHOD_SIGNATURE.
+												  
+	@param       message                          Message to be printed if something goes wrong.
+	
+	@note                                         1) This function depends on CHECK_CLASS_METHOD_SIGNATURE function. 
+												  2) This function needs to begin with "BEGIN {".
+												  3) This function needs to end with "} END".
+**************************************************************************************************************************************************************************
+
+
+
+
+
+**************************************************************************************************************************************************************************
+	@function    ASSERT_CLASS_CONSTRUCTOR         Checks if a constructor in a given class has been defined.
+	@param       message                          Message to be printed if something goes wrong.
+	@param       class_name                       Name of the class to be checked.
+	@param       __VA_ARGS__                      Type of parameters in the constructor. If default constructor
+												  is checked, then no parameters needed.
+												  
+	@note                                         1) Note that if we want to check values of an attribute or return value of
+												  a method, this can't be done in the standard way. To access an attribute or
+												  to get the value returned from a function we need to use special functions
+												  which our CHECK_CLASS_ATTRIBUTE and CHECK_CLASS_METHOD functions creates after
+												  we call them. Standard name of this functions are '__check_attribute_##attribute_name##__'
+												  for attributes and '__check_method_##method_name##__' for methods, where attribute_name and
+												  method_name are the name of the attribute and method respectivly.
+												  2) This function needs to begin with "BEGIN {".
+												  3) This function needs to end with "} END".
+**************************************************************************************************************************************************************************	
+

@@ -1,0 +1,39 @@
+CASE=Test #1
+REQUIRES=Function::Name_multiply
+
+CASE=Test #2
+INPUT=2
+OUTPUT=2
+REQUIRES=Class_Test::Class_Existence
+
+CASE=Test #3
+INPUT=3
+OUTPUT=3
+DEPENDENCIES=Test #2
+REQUIRES=Class_Test::Attributes_tmp_ftmp_Existence
+
+CASE=Test #4
+INPUT=4
+OUTPUT=4
+DEPENDENCIES=Test #2
+REQUIRES=Class_Test::Methods_print_sum_Existence
+
+CASE=Test #5
+INPUT=6
+OUTPUT=6
+DEPENDENCIES=Test #4
+REQUIRES=Class_Test::Methods_print_sum_Signatures
+
+CASE=Test #6
+INPUT=5
+OUTPUT=5
+DEPENDENCIES=Test #3
+DEPENDENCIES=Test #5
+REQUIRES=Class_Test::Default_Constructor
+
+CASE=Test #7
+INPUT=6
+OUTPUT=6
+DEPENDENCIES=Test #6
+REQUIRES=Class_Test::Two_Arguments_Constructor
+
