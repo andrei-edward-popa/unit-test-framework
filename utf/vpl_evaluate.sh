@@ -65,8 +65,6 @@ else
 		mv structures.h_ structures.h
 		mv tests.h_ tests.h
 		
-		grep -e "^\s*CLASS" tests.h | cut -d'(' -f 2 | cut -d')' -f 1 > classes.txt
-		
 		cat $main_file > main_prog.txt
 		
 		sed -i -E 's/^[A-Za-z_][A-Za-z0-9_\*\&]*\s+[\*\&A-Za-z_]*[A-Za-z0-9_]*\s*\((\s*[A-Za-z_][A-Za-z0-9_\*\&]*\s+[\*\&A-Za-z_]*[A-Za-z0-9_]*\s*,{0,1}\s*){1,}\s*\)\s*;\s*$//g' main_prog.txt
@@ -77,29 +75,11 @@ else
 		
 		cp vpl_evaluate.cpp saved_vpl_evaluate.cpp
 		cat main_prog.txt > vpl_evaluate.cpp
-		cat main_prog.txt > student_impl.txt
-		while read class; do
-			sed -i 's/'$class':://g' student_impl.txt
-		done < classes.txt
-		if [ ! -s student_impl.txt ]; then
-			echo 'struct GlobalFunctionsWrapper {' > student_impl.txt
-		else
-			sed -i '1s/^/struct GlobalFunctionsWrapper {\n/' student_impl.txt
-		fi
-		echo "};" >> student_impl.txt
-		sed -i -E 's/\s*using\s+namespace\s+[A-Za-z0-9:_]+\s*;\s*//g' student_impl.txt
-		while IFS= read -r class
-		do
-			sed -i '2s/^/class '${class}';\n/' student_impl.txt
-		done < "classes.txt"
-		cat student_impl.txt >> vpl_evaluate.cpp
 		echo -e "\n#undef main" >> vpl_evaluate.cpp
 		cat saved_vpl_evaluate.cpp >> vpl_evaluate.cpp
 		
 		rm -f saved_vpl_evaluate.cpp
-		rm -f student_impl.txt
 		rm -f main_prog.txt
-		rm -f classes.txt
 		
 		#avoid conflict with C++ compilation
 		./vpl_run.sh
@@ -123,7 +103,7 @@ else
 			cat vpl_evaluate.cpp.save >> vpl_evaluate.cpp
 			check_program g++
 			SOURCE_FILES_WITHOUT_MAIN=${SOURCE_FILES//$main_file/}
-			g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++2b -fconcepts $SOURCE_FILES_WITHOUT_MAIN vpl_evaluate.cpp -g -lm -lutil -o .vpl_tester
+			g++ --param ggc-min-expand=10 --param ggc-min-heapsize=8192 -std=c++17 -fconcepts $SOURCE_FILES_WITHOUT_MAIN vpl_evaluate.cpp -g -lm -lutil -o .vpl_tester
 			mv functions.h functions.h_
 			mv tests.h tests.h_
 			mv structures.h structures.h_
@@ -150,8 +130,6 @@ else
 		
 	else
 		rm -f saved_vpl_evaluate.cpp
-		rm -f student_impl.txt
-		rm -f classes.txt
 		rm -f student_after_main.txt
 		echo "#!/bin/bash" > vpl_execution
 		echo "echo" >> vpl_execution

@@ -12,7 +12,6 @@ mrproper:
 	rm -f *.cpp.save
 	rm -f .vpl_tester
 	rm -f *.sh
-	rm -f tui/tests.h
 	rm -f tcs/extract.conf
 	rm -f tcs/tests.h
 	rm -f tcs/vpl_evaluate.cases

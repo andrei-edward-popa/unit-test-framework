@@ -108,6 +108,7 @@ CASE=Test #8
 INPUT=8
 OUTPUT=8
 DEPENDENCIES=Test #7
+REQUIRES=private::SegmentationFault
 REQUIRES=Constructor::3Param_Block
 REQUIRES=Constructor::1Param_CityHall
 REQUIRES=Constructor::1Param_Hospital

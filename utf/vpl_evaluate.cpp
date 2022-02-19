@@ -4,11 +4,11 @@
  * @License http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @Author Juan Carlos Rodríguez-del-Pino <jcrodriguez@dis.ulpgc.es>
  */
+
 #include "functions.h"
 #include "tests.h"
-#include <cstdlib>
+
 #include <cstdio>
-#include <limits>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -18,7 +18,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <cstring>
-#include <string>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -26,11 +25,7 @@
 #include <execinfo.h>
 #include <regex.h>
 #include <string>
-#include <algorithm>
-#include <set>
 #include <chrono>
-
-using namespace std;
 
 const int MAXCOMMENTS = 20;
 const int MAXCOMMENTSLENGTH = 100*1024;
@@ -43,18 +38,18 @@ const char* TESTCASEFILE = "evaluate.cases";
  */
 class Tools {
 public:
-	static bool existFile(string name);
-	static string readFile(string name);
-	static vector<string> splitLines(const string &data);
-	static int nextLine(const string &data);
-	static string caseFormat(string text);
-	static string toLower(const string &text);
-	static string normalizeTag(const string &text);
-	static string trimRight(const string &text);
-	static string trim(const string &text);
+	static bool existFile(std::string name);
+	static std::string readFile(std::string name);
+	static std::vector<std::string> splitLines(const std::string &data);
+	static int nextLine(const std::string &data);
+	static std::string caseFormat(std::string text);
+	static std::string toLower(const std::string &text);
+	static std::string normalizeTag(const std::string &text);
+	static std::string trimRight(const std::string &text);
+	static std::string trim(const std::string &text);
 	static void fdblock(int fd, bool set);
-	static bool convert2(const string& str, double &data);
-	static bool convert2(const string& str, long int &data);
+	static bool convert2(const std::string& str, double &data);
+	static bool convert2(const std::string& str, long int &data);
 };
 
 
@@ -99,15 +94,15 @@ public:
  */
 class OutputChecker{
 protected:
-	string text;
+	std::string text;
 
 public:
-	OutputChecker(const string &t):text(t){}
+	OutputChecker(const std::string &t):text(t){}
 	virtual ~OutputChecker(){};
-	virtual string type(){return "";}
-	virtual string outputExpected(){return text;}
-	virtual string studentOutputExpected(){return text;}
-	virtual bool match(const string&)=0;
+	virtual std::string type(){return "";}
+	virtual std::string outputExpected(){return text;}
+	virtual std::string studentOutputExpected(){return text;}
+	virtual bool match(const std::string&)=0;
 	virtual OutputChecker* clone()=0;
 };
 
@@ -122,27 +117,27 @@ class NumbersOutput:public OutputChecker{
 		long int integer;
 		double cientific;
 
-		bool set(const string& str);
+		bool set(const std::string& str);
 		bool operator==(const Number &o)const;
 		bool operator!=(const Number &o)const;
 	};
 
-	vector<Number> numbers;
+	std::vector<Number> numbers;
 	bool startWithAsterisk;
-	string cleanText;
+	std::string cleanText;
 
 	static bool isNum(char c);
 	static bool isNumStart(char c);
 	bool calcStartWithAsterisk();
 
 public:
-	NumbersOutput(const string &text);//:OutputChecker(text);
-	string studentOutputExpected();
+	NumbersOutput(const std::string &text);//:OutputChecker(text);
+	std::string studentOutputExpected();
 	bool operator==(const NumbersOutput& o)const;
-	bool match(const string& output);
+	bool match(const std::string& output);
 	OutputChecker* clone();
-	static bool typeMatch(const string& text);
-	string type();
+	static bool typeMatch(const std::string& text);
+	std::string type();
 };
 
 
@@ -151,16 +146,16 @@ public:
  * Class TextOutput Declaration
  */
 class TextOutput:public OutputChecker{
-	vector<string> tokens;
+	std::vector<std::string> tokens;
 	bool isAlpha(char c);
 
 public:
-	TextOutput(const string &text);//:OutputChecker(text);
+	TextOutput(const std::string &text);//:OutputChecker(text);
 	bool operator==(const TextOutput& o);
-	bool match(const string& output);
+	bool match(const std::string& output);
 	OutputChecker* clone();
-	static bool typeMatch(const string& text);
-	string type();
+	static bool typeMatch(const std::string& text);
+	std::string type();
 };
 
 
@@ -169,18 +164,18 @@ public:
  * Class ExactTextOutput Declaration
  */
 class ExactTextOutput:public OutputChecker{
-	string cleanText;
+	std::string cleanText;
 	bool startWithAsterix;
 	bool isAlpha(char c);
 
 public:
-	ExactTextOutput(const string &text);//:OutputChecker(text);
-	string studentOutputExpected();
+	ExactTextOutput(const std::string &text);//:OutputChecker(text);
+	std::string studentOutputExpected();
 	bool operator==(const ExactTextOutput& o);
-	bool match(const string& output);
+	bool match(const std::string& output);
 	OutputChecker* clone();
-	static bool typeMatch(const string& text);
-	string type();
+	static bool typeMatch(const std::string& text);
+	std::string type();
 };
 
 
@@ -193,28 +188,28 @@ public:
  * Miguel Ángel Viera González
  */
 class RegularExpressionOutput:public OutputChecker {
-	string errorCase;
-	string cleanText;
+	std::string errorCase;
+	std::string cleanText;
 	regex_t expression;
 	bool flagI;
 	bool flagM;
 	int reti;
 
 public:
-	RegularExpressionOutput (const string &text, const string &actualCaseDescription);
+	RegularExpressionOutput (const std::string &text, const std::string &actualCaseDescription);
 
-	bool match (const string& output);
+	bool match (const std::string& output);
 		// Regular Expression compilation (with flags in mind) and comparison with the input and output evaluation
 
-	string studentOutputExpected();
+	std::string studentOutputExpected();
 		// Returns the expression without flags nor '/'
 
 	OutputChecker* clone();
 
-	static bool typeMatch(const string& text);
+	static bool typeMatch(const std::string& text);
 		// Tests if it's a regular expression. A regular expressions should be between /../
 
-	string type();
+	std::string type();
 };
 
 
@@ -234,39 +229,40 @@ class TestCase {
 	bool executionError;
 	char executionErrorReason[1000];
 	int sizeReaded;
-	string input;
-	vector< OutputChecker* > output;
-	string caseDescription;
+	std::string input;
+	std::vector<OutputChecker *> output;
+	std::string caseDescription;
 	float gradeReduction;
 	double executionTime;
 	float gradeReductionApplied;
-	string programOutputBefore, programOutputAfter, programInput;
+	std::string programOutputBefore, programOutputAfter, programInput;
 
-	void cutOutputTooLarge(string &output);
+	void cutOutputTooLarge(std::string &output);
 	void readWrite(int fdread, int fdwrite);
-	void addOutput(const string &o, const string &actualCaseDescription);
+	void addOutput(const std::string &o, const std::string &actualCaseDescription);
 
 public:
-	vector<string> req;
-	vector<string> depends;
-	static std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> requirements;
+	std::vector<std::vector<std::pair<std::string, std::string>>> req;
+	std::vector<std::string> depends;
 	static void setEnvironment(const char **environment);
 	TestCase(const TestCase &o);
 	TestCase& operator=(const TestCase &o);
 	~TestCase();
-	TestCase(int id, const string &input, const vector<string> &output, const vector<string> &req, const vector<string> &depends,
-			const string &caseDescription, const float gradeReduction, const float executionTime);
+	TestCase(int id, const std::string &input, const std::vector<std::string> &output,
+			const std::vector<std::vector<std::pair<std::string, std::string>>> &req, const std::vector<std::string> &depends,
+			const std::string &caseDescription, const float gradeReduction, const float executionTime);
 	bool isCorrectResult();
 	float getGradeReduction();
 	double getExecutionTime();
 	void setGradeReductionApplied(float r);
 	float getGradeReductionApplied();
-	string getCaseDescription() const;
-	string getCommentTitle(bool withGradeReduction/*=false*/); // Suui
-	string getComment();
+	std::string getCaseDescription() const;
+	std::string getCommentTitle(bool withGradeReduction/*=false*/); // Suui
+	std::string getComment();
 	void runTest(time_t timeout);
-	bool match(string data);
+	bool match(std::string data);
 	int getOutputSize() const;
+	void computeAndCheckRequirements(std::unordered_map<std::string, std::vector<std::string>> &errorMessages, bool &allRequirementsPassed);
 };
 
 
@@ -279,7 +275,7 @@ class Evaluation {
 	float grademin, grademax;
 	bool noGrade;
 	float grade;
-	vector<TestCase> testCases;
+	std::vector<TestCase> testCases;
 	int nerrors, nruns;
 	volatile bool stopping;
 	static Evaluation *singlenton;
@@ -292,15 +288,17 @@ public:
 	volatile int ncomments;
 	static Evaluation* getSinglenton();
 	static void deleteSinglenton();
-	void addTestCase(string &input, vector<string> &output, vector<string> &reqs, vector<string> &depends,
-			string &caseDescription, float &gradeReduction, double &executionTime);
-	static void removeLastNL(string &s);
-	static void removeLastWS(string &s);
-	static void removeFirstWS(string &s);
-	static void removeFirstNL(string &s);
-	static void trim(string &s);
-	bool cutToEndTag(string &value, const string &endTag);
-	void loadTestCases(string fname);
+	void addTestCase(std::string &input, std::vector<std::string> &output, std::vector<std::vector<std::pair<std::string, std::string>>> &reqs, std::vector<std::string> &depends,
+			std::string &caseDescription, float &gradeReduction, double &executionTime);
+	static void removeLastNL(std::string &s);
+	static void removeLastWS(std::string &s);
+	static void removeFirstWS(std::string &s);
+	static void removeFirstNL(std::string &s);
+	static void trim(std::string &s);
+	static std::pair<std::string, std::string> splitByColon(const std::string &);
+	static std::vector<std::pair<std::string, std::string>> parseRequire(std::string &str);
+	bool cutToEndTag(std::string &value, const std::string &endTag);
+	void loadTestCases(std::string fname);
 	bool loadParams();
 	void addFatalError(const char *m);
 	void runTests();
@@ -315,6 +313,7 @@ public:
 	int getNRuns();
 	int getNErrors();
 	TestCase& getTestCase(int index);
+	void recursiveFindRequirementsAndDependencies(const TestCase &testCase, bool &allRequirementsPassed, std::unordered_map<std::string, std::vector<std::string>> &errorMessages);
 };
 
 
@@ -340,18 +339,13 @@ const char *TestCase::command = NULL;
 const char **TestCase::argv = NULL;
 const char **TestCase::envv = NULL;
 Evaluation* Evaluation::singlenton = NULL;
-void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testCases, const TestCase &testCase, 
-							   const std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> &requirements, bool &allRequirementsPassed,
-							   std::unordered_map<std::string, std::vector<std::string>> &errorMessages);
-void computeAndCheckRequirements(const TestCase& testCase, std::unordered_map<std::string, std::vector<std::string>>& errorMessages, bool& allRequirementsPassed);
-std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> TestCase::requirements = std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>>{};
 void handler(int nSignum, siginfo_t* si, void* vcontext);
 
 /**
  * Class Tools Definitions
  */
 
-bool Tools::existFile(string name) {
+bool Tools::existFile(std::string name) {
 	FILE *f = fopen(name.c_str(), "r");
 	if (f != NULL) {
 		fclose(f);
@@ -360,9 +354,9 @@ bool Tools::existFile(string name) {
 	return false;
 }
 
-string Tools::readFile(string name) {
+std::string Tools::readFile(std::string name) {
 	char buf[1000];
-	string res;
+	std::string res;
 	FILE *f = fopen(name.c_str(), "r");
 	if (f != NULL)
 		while (fgets(buf, 1000, f) != NULL)
@@ -370,8 +364,8 @@ string Tools::readFile(string name) {
 	return res;
 }
 
-vector<string> Tools::splitLines(const string &data) {
-	vector<string> lines;
+std::vector<std::string> Tools::splitLines(const std::string &data) {
+	std::vector<std::string> lines;
 	int len, l = data.size();
 	int startLine = 0;
 	char pc = 0, c;
@@ -395,7 +389,7 @@ vector<string> Tools::splitLines(const string &data) {
 	return lines;
 }
 
-int Tools::nextLine(const string &data) {
+int Tools::nextLine(const std::string &data) {
 	int l = data.size();
 	for (int i = 0; i < l; i++) {
 		if (data[i] == '\n')
@@ -404,25 +398,25 @@ int Tools::nextLine(const string &data) {
 	return l;
 }
 
-string Tools::caseFormat(string text) {
-	vector<string> lines = Tools::splitLines(text);
-	string res;
+std::string Tools::caseFormat(std::string text) {
+	std::vector<std::string> lines = Tools::splitLines(text);
+	std::string res;
 	int nlines = lines.size();
 	for (int i = 0; i < nlines; i++)
 		res += ">" + lines[i] + '\n';
 	return res;
 }
 
-string Tools::toLower(const string &text) {
-	string res = text;
+std::string Tools::toLower(const std::string &text) {
+	std::string res = text;
 	int len = res.size();
 	for (int i = 0; i < len; i++)
 		res[i] = tolower(res[i]);
 	return res;
 }
 
-string Tools::normalizeTag(const string &text) {
-	string res;
+std::string Tools::normalizeTag(const std::string &text) {
+	std::string res;
 	int len = text.size();
 	for (int i = 0; i < len; i++) {
 		char c = text[i];
@@ -432,7 +426,7 @@ string Tools::normalizeTag(const string &text) {
 	return res;
 }
 
-string Tools::trimRight(const string &text) {
+std::string Tools::trimRight(const std::string &text) {
 	int len = text.size();
 	int end = -1;
 	for (int i = len - 1; i >= 0; i--) {
@@ -444,7 +438,7 @@ string Tools::trimRight(const string &text) {
 	return text.substr(0, end + 1);
 }
 
-string Tools::trim(const string &text) {
+std::string Tools::trim(const std::string &text) {
 	int len = text.size();
 	int begin = len;
 	int end = -1;
@@ -479,14 +473,14 @@ void Tools::fdblock(int fd, bool set) {
 	fcntl(fd, F_SETFL, flags);
 }
 
-bool Tools::convert2(const string& str, double &data){
-	stringstream conv(str);
+bool Tools::convert2(const std::string& str, double &data){
+	std::stringstream conv(str);
 	conv >> data;
 	return conv.eof();
 }
 
-bool Tools::convert2(const string& str, long int &data){
-	stringstream conv(str);
+bool Tools::convert2(const std::string& str, long int &data){
+	std::stringstream conv(str);
 	conv >> data;
 	return conv.eof();
 }
@@ -541,7 +535,7 @@ const char *I18n::get_string(const char *s){
 
 
 // Struct Number
-bool NumbersOutput::Number::set(const string& str){
+bool NumbersOutput::Number::set(const std::string& str){
 	isInteger=Tools::convert2(str, integer);
 	if(!isInteger){
 		return Tools::convert2(str, cientific);
@@ -589,9 +583,9 @@ bool NumbersOutput::calcStartWithAsterisk(){
 	return false;
 }
 
-NumbersOutput::NumbersOutput(const string &text):OutputChecker(text){
+NumbersOutput::NumbersOutput(const std::string &text):OutputChecker(text){
 	int l=text.size();
-	string str;
+	std::string str;
 	Number number;
 	for(int i=0; i<l; i++){
 		char c=text[i];
@@ -608,7 +602,7 @@ NumbersOutput::NumbersOutput(const string &text):OutputChecker(text){
 	startWithAsterisk=calcStartWithAsterisk();
 }
 
-string NumbersOutput::studentOutputExpected(){
+std::string NumbersOutput::studentOutputExpected(){
 	return cleanText;
 }
 
@@ -624,7 +618,7 @@ bool NumbersOutput::operator==(const NumbersOutput& o)const{
 	return true;
 }
 
-bool NumbersOutput::match(const string& output){
+bool NumbersOutput::match(const std::string& output){
 	NumbersOutput temp(output);
 	return operator==(temp);
 }
@@ -633,9 +627,9 @@ OutputChecker* NumbersOutput::clone(){
 	return new NumbersOutput(outputExpected());
 }
 
-bool NumbersOutput::typeMatch(const string& text){
+bool NumbersOutput::typeMatch(const std::string& text){
 	int l=text.size();
-	string str;
+	std::string str;
 	Number number;
 	for(int i=0; i<l; i++){
 		char c=text[i];
@@ -654,7 +648,7 @@ bool NumbersOutput::typeMatch(const string& text){
 	return true;
 }
 
-string NumbersOutput::type(){
+std::string NumbersOutput::type(){
 	return "numbers";
 }
 
@@ -669,9 +663,9 @@ bool TextOutput::isAlpha(char c){
 	return c<0;
 }
 
-TextOutput::TextOutput(const string &text):OutputChecker(text){
+TextOutput::TextOutput(const std::string &text):OutputChecker(text){
 	int l=text.size();
-	string token;
+	std::string token;
 	for(int i=0; i<l; i++){
 		char c=text[i];
 		if(isAlpha(c)){
@@ -696,7 +690,7 @@ bool TextOutput::operator==(const TextOutput& o){
 	return true;
 }
 
-bool TextOutput::match(const string& output){
+bool TextOutput::match(const std::string& output){
 	TextOutput temp(output);
 	return operator==(temp);
 }
@@ -705,11 +699,11 @@ OutputChecker* TextOutput::clone(){
 	return new TextOutput(outputExpected());
 }
 
-bool TextOutput::typeMatch(const string& text){
+bool TextOutput::typeMatch(const std::string& text){
 	return true;
 }
 
-string TextOutput::type(){
+std::string TextOutput::type(){
 	return "text";
 }
 
@@ -724,8 +718,8 @@ bool ExactTextOutput::isAlpha(char c){
 	return c<0;
 }
 
-ExactTextOutput::ExactTextOutput(const string &text):OutputChecker(text){
-	string clean=Tools::trim(text);
+ExactTextOutput::ExactTextOutput(const std::string &text):OutputChecker(text){
+	std::string clean=Tools::trim(text);
 	if(clean.size()>2 && clean[0]=='*'){
 		startWithAsterix =true;
 		cleanText=clean.substr(2,clean.size()-3);
@@ -735,7 +729,7 @@ ExactTextOutput::ExactTextOutput(const string &text):OutputChecker(text){
 	}
 }
 
-string ExactTextOutput::studentOutputExpected(){
+std::string ExactTextOutput::studentOutputExpected(){
 	return cleanText;
 }
 
@@ -743,9 +737,9 @@ bool ExactTextOutput::operator==(const ExactTextOutput& o){
 	return match(o.text);
 }
 
-bool ExactTextOutput::match(const string& output){
+bool ExactTextOutput::match(const std::string& output){
 	if(cleanText.size()==0 && output.size()==0) return true;
-	string clean;
+	std::string clean;
 	//Clean output if text last char is alpha
 	if(cleanText.size()>0 && isAlpha(cleanText[cleanText.size()-1])){
 		clean=Tools::trimRight(output);
@@ -765,13 +759,13 @@ OutputChecker* ExactTextOutput::clone(){
 	return new ExactTextOutput(outputExpected());
 }
 
-bool ExactTextOutput::typeMatch(const string& text){
-	string clean=Tools::trim(text);
+bool ExactTextOutput::typeMatch(const std::string& text){
+	std::string clean=Tools::trim(text);
 	return (clean.size()>1 && clean[0]=='"' && clean[clean.size()-1]=='"')
 			||(clean.size()>3 && clean[0]=='*' && clean[1]=='"' && clean[clean.size()-1]=='"');
 }
 
-string ExactTextOutput::type(){
+std::string ExactTextOutput::type(){
 	return "exact text";
 }
 
@@ -781,13 +775,13 @@ string ExactTextOutput::type(){
  * Class RegularExpressionOutput Definitions
  */
 
-RegularExpressionOutput::RegularExpressionOutput(const string &text, const string &actualCaseDescription):OutputChecker(text) {
+RegularExpressionOutput::RegularExpressionOutput(const std::string &text, const std::string &actualCaseDescription):OutputChecker(text) {
 
 	errorCase = actualCaseDescription;
 	int pos = 1;
 	flagI = false;
 	flagM = false;
-	string clean = Tools::trim(text);
+	std::string clean = Tools::trim(text);
 
 	while (clean[pos] != '/' && pos < clean.size()) {
 		pos++;
@@ -809,11 +803,11 @@ RegularExpressionOutput::RegularExpressionOutput(const string &text, const strin
 				default:
 					Evaluation* p_ErrorTest = Evaluation::getSinglenton();
 					char wrongFlag = clean[pos];
-					string flagCatch;
-					stringstream ss;
+					std::string flagCatch;
+					std::stringstream ss;
 					ss << wrongFlag;
 					ss >> flagCatch;
-					string errorType = string("Flag Error in case ")+ string(errorCase)+ string (", found a ") + string(flagCatch) + string (" used as a flag, only i and m available");
+					std::string errorType = std::string("Flag Error in case ") + std::string(errorCase) + std::string (", found a ") + std::string(flagCatch) + std::string (" used as a flag, only i and m available");
 					const char* flagError = errorType.c_str();
 					p_ErrorTest->addFatalError(flagError);
 					p_ErrorTest->outputEvaluation();
@@ -825,7 +819,7 @@ RegularExpressionOutput::RegularExpressionOutput(const string &text, const strin
 }
 
 // Regular Expression compilation (with flags in mind) and comparison with the input and output evaluation
-bool RegularExpressionOutput::match (const string& output) {
+bool RegularExpressionOutput::match (const std::string& output) {
 
 	reti=-1;
 	const char * in = cleanText.c_str();
@@ -859,7 +853,7 @@ bool RegularExpressionOutput::match (const string& output) {
 		} else { // Memory Error
 
 			Evaluation* p_ErrorTest = Evaluation::getSinglenton();
-			string errorType = string("Out of memory error, during maching case ") + string(errorCase);
+			std::string errorType = std::string("Out of memory error, during maching case ") + std::string(errorCase);
 			const char* flagError = errorType.c_str();
 			p_ErrorTest->addFatalError(flagError);
 			p_ErrorTest->outputEvaluation();
@@ -871,7 +865,7 @@ bool RegularExpressionOutput::match (const string& output) {
         char bff [length];
         (void) regerror(reti, &expression, bff, length);
 		Evaluation* p_ErrorTest = Evaluation::getSinglenton();
-		string errorType = string("Regular Expression compilation error")+string (" in case: ")+ string(errorCase) +string (".\n")+ string(bff);
+		std::string errorType = std::string("Regular Expression compilation error") + std::string (" in case: ") + std::string(errorCase) + std::string (".\n") + std::string(bff);
 		const char* flagError = errorType.c_str();
 		p_ErrorTest->addFatalError(flagError);
 		p_ErrorTest->outputEvaluation();
@@ -881,15 +875,15 @@ bool RegularExpressionOutput::match (const string& output) {
 }
 
 // Returns the expression without flags nor '/'
-string RegularExpressionOutput::studentOutputExpected() {return cleanText;}
+std::string RegularExpressionOutput::studentOutputExpected() {return cleanText;}
 
 OutputChecker* RegularExpressionOutput::clone() {
 	return new RegularExpressionOutput(outputExpected(), errorCase);
 }
 
 // Tests if it's a regular expression. A regular expressions should be between /../
-bool RegularExpressionOutput::typeMatch(const string& text) {
-	string clean=Tools::trim(text);
+bool RegularExpressionOutput::typeMatch(const std::string& text) {
+	std::string clean=Tools::trim(text);
 	if (clean.size() > 2 && clean[0] == '/') {
 		for (int i = 1; i < clean.size(); i++) {
 			if (clean[i] == '/') {
@@ -900,7 +894,7 @@ bool RegularExpressionOutput::typeMatch(const string& text) {
 	return false;
 }
 
-string RegularExpressionOutput::type() {
+std::string RegularExpressionOutput::type() {
 	return "regular expression";
 }
 
@@ -911,7 +905,7 @@ string RegularExpressionOutput::type() {
  * TestCase represents cases of test
  */
 
-void TestCase::cutOutputTooLarge(string &output) {
+void TestCase::cutOutputTooLarge(std::string &output) {
 	if (output.size() > MAXOUTPUT) {
 		outputTooLarge = true;
 		output.erase(0, output.size() - MAXOUTPUT);
@@ -940,10 +934,10 @@ void TestCase::readWrite(int fdread, int fdwrite) {
 		if (readed > 0) {
 			sizeReaded += readed;
 			if (programInput.size() > 1) {
-				programOutputBefore += string(buf, readed);
+				programOutputBefore += std::string(buf, readed);
 				cutOutputTooLarge(programOutputBefore);
 			} else {
-				programOutputAfter += string(buf, readed);
+				programOutputAfter += std::string(buf, readed);
 				cutOutputTooLarge(programOutputAfter);
 			}
 		}
@@ -960,7 +954,7 @@ void TestCase::readWrite(int fdread, int fdwrite) {
 	}
 }
 
-void TestCase::addOutput(const string &o, const string &actualCaseDescription){
+void TestCase::addOutput(const std::string &o, const std::string &actualCaseDescription){
 // actualCaseDescripction, used to get current test name for Output recognition
 	if(ExactTextOutput::typeMatch(o))
 		this->output.push_back(new ExactTextOutput(o));
@@ -1046,8 +1040,9 @@ TestCase::~TestCase() {
 		delete output[i];
 }
 
-TestCase::TestCase(int id, const string &input, const vector<string> &output, const vector<string> &req, const vector<string> &depends,
-		const string &caseDescription, const float gradeReduction, const float executionTime) {
+TestCase::TestCase(int id, const std::string &input, const std::vector<std::string> &output,
+					const std::vector<std::vector<std::pair<std::string, std::string>>> &req, const std::vector<std::string> &depends,
+					const std::string &caseDescription, const float gradeReduction, const float executionTime) {
 	this->id = id;
 	this->input = input;
 	for(int i=0;i<output.size(); i++){
@@ -1093,13 +1088,13 @@ float TestCase::getGradeReductionApplied() {
 	return gradeReductionApplied;
 }
 
-string TestCase::getCaseDescription() const {
+std::string TestCase::getCaseDescription() const {
 	return caseDescription;
 }
 
-string TestCase::getCommentTitle(bool withGradeReduction=false) {
+std::string TestCase::getCommentTitle(bool withGradeReduction=false) {
 	char buf[100];
-	string ret;
+	std::string ret;
 	sprintf(buf, "Test %d", id);
 	ret = buf;
 	if (caseDescription.size() > 0) {
@@ -1113,13 +1108,13 @@ string TestCase::getCommentTitle(bool withGradeReduction=false) {
 	return ret;
 }
 
-string TestCase::getComment() {
+std::string TestCase::getComment() {
 	if (correctOutput && !(programTimeout || outputTooLarge
 			|| executionError)) {
 		return "";
 	}
 	char buf[100];
-	string ret;
+	std::string ret;
 	if (programTimeout) {
 		ret += "Program timeout\n";
 	}
@@ -1128,7 +1123,7 @@ string TestCase::getComment() {
 		ret += buf;
 	}
 	if (executionError) {
-		ret += executionErrorReason + string("\n");
+		ret += executionErrorReason + std::string("\n");
 	}
 	if (!correctOutput) {
 		if(output.size() > 0) {
@@ -1230,7 +1225,7 @@ void TestCase::runTest(time_t timeout) {//timeout in seconds
 			+ programOutputAfter);
 }
 
-bool TestCase::match(string data) {
+bool TestCase::match(std::string data) {
 	for (int i = 0; i < output.size(); i++)
 		if (output[i]->match(data))
 			return true;
@@ -1239,6 +1234,35 @@ bool TestCase::match(string data) {
 
 int TestCase::getOutputSize() const {
 	return output.size();
+}
+
+void TestCase::computeAndCheckRequirements(std::unordered_map<std::string, std::vector<std::string>>& errorMessages, bool& allRequirementsPassed) {
+	const std::string &description = this->getCaseDescription();
+	for (const auto &current_reqs : this->req) {
+		std::vector<std::pair<std::string, std::string>> failed_reqs;
+		bool requirementPassed = false;
+		for (const auto &current_req : current_reqs) {
+			auto [suite_name, test_name] = current_req;
+			Evaluation::trim(suite_name);
+			Evaluation::trim(test_name);
+			utf::SuiteHolder::Instance().run_one(suite_name, test_name);
+			requirementPassed |= utf::SuiteHolder::Instance().report(suite_name, test_name).satisfied();
+			if (!requirementPassed) {
+				failed_reqs.push_back(current_req);
+			}
+		}
+		allRequirementsPassed &= requirementPassed;
+		if (!requirementPassed) {
+			for (const auto &[suite_name, test_name] : failed_reqs) {
+				for (const std::string &error : utf::SuiteHolder::Instance().report(suite_name, test_name).errors()) {
+					auto isErrorMessage = std::find(errorMessages[description].begin(), errorMessages[description].end(), error);
+					if (isErrorMessage == errorMessages[description].end()) {
+						errorMessages[description].push_back(error);
+					}
+				}
+			}
+		}
+	}
 }
 
 
@@ -1269,8 +1293,8 @@ void Evaluation::deleteSinglenton(){
 	}
 }
 
-void Evaluation::addTestCase(string &input, vector<string> &output, vector<string> &reqs, vector<string> &depends,
-		string &caseDescription, float &gradeReduction, double &executionTime) {
+void Evaluation::addTestCase(std::string &input, std::vector<std::string> &output, std::vector<std::vector<std::pair<std::string, std::string>>> &reqs, std::vector<std::string> &depends,
+		std::string &caseDescription, float &gradeReduction, double &executionTime) {
 	testCases.push_back(TestCase(testCases.size() + 1, input, output, reqs, depends,
 			caseDescription, gradeReduction, executionTime));
 	
@@ -1283,31 +1307,31 @@ void Evaluation::addTestCase(string &input, vector<string> &output, vector<strin
 	executionTime = 3600.0;
 }
 
-void Evaluation::removeLastNL(string &s) {
+void Evaluation::removeLastNL(std::string &s) {
 	if (s.size() > 0 && s[s.size() - 1] == '\n') {
 		s.resize(s.size() - 1);
 	}
 }
 
-void Evaluation::removeLastWS(string &s) {
+void Evaluation::removeLastWS(std::string &s) {
 	if (s.size() > 0 && s[s.size() - 1] == ' ') {
 		s.resize(s.size() - 1);
 	}
 }
 
-void Evaluation::removeFirstNL(string &s) {
+void Evaluation::removeFirstNL(std::string &s) {
 	if (s.size() > 0 && s[0] == '\n') {
 		s.erase(s.begin());
 	}
 }
 
-void Evaluation::removeFirstWS(string &s) {
+void Evaluation::removeFirstWS(std::string &s) {
 	if (s.size() > 0 && s[0] == ' ') {
 		s.erase(s.begin());
 	}
 }
 
-void Evaluation::trim(string &s) {
+void Evaluation::trim(std::string &s) {
 	while (s[s.size() - 1] == '\n') {
 		removeLastNL(s);
 	}
@@ -1322,9 +1346,33 @@ void Evaluation::trim(string &s) {
 	}
 }
 
-bool Evaluation::cutToEndTag(string &value, const string &endTag) {
+std::pair<std::string, std::string> Evaluation::splitByColon(const std::string &str) {
+	auto index = str.find("::");
+	if (index == std::string::npos) {
+		throw std::runtime_error("Cannot split by '::'!");
+	}
+	return { str.substr(0, index), str.substr(index + 2) };
+}
+
+std::vector<std::pair<std::string, std::string>> Evaluation::parseRequire(std::string &str) {
+	int64_t orIndex = str.find('|');
+	std::vector<std::pair<std::string, std::string>> reqs;
+	while (orIndex != std::string::npos) {
+		std::string parsed = str.substr(0, orIndex);
+		Evaluation::trim(parsed);
+		reqs.push_back(Evaluation::splitByColon(parsed));
+		str = str.substr(orIndex + 1);
+		orIndex = str.find('|');
+	}
+	Evaluation::trim(str);
+	reqs.push_back(Evaluation::splitByColon(str));
+	return reqs;
+}
+
+
+bool Evaluation::cutToEndTag(std::string &value, const std::string &endTag) {
 	size_t pos;
-	if (endTag.size() && (pos = value.find(endTag)) != string::npos) {
+	if (endTag.size() && (pos = value.find(endTag)) != std::string::npos) {
 		value.resize(pos);
 		return true;
 	}
@@ -1372,7 +1420,7 @@ TestCase& Evaluation::getTestCase(int index) {
 	return testCases[index];
 }
 
-void Evaluation::loadTestCases(string fname) {
+void Evaluation::loadTestCases(std::string fname) {
 	if(!Tools::existFile(fname)) return;
 	const char *CASE_TAG = "case=";
 	const char *INPUT_TAG = "input=";
@@ -1387,35 +1435,36 @@ void Evaluation::loadTestCases(string fname) {
 		regular, ininput, inoutput, inrequire, independ, inexectime
 	} state, newstate;
 	bool inCase = false;
-	vector<string> lines = Tools::splitLines(Tools::readFile(fname));
-	string inputEnd = "";
-	string outputEnd = "";
-	string requireEnd = "";
-	string dependEnd = "";
-	string input = "";
-	string output = "";
-	string require = "";
-	string depend = "";
-	string exectime = "";
-	string caseDescription = "";
-	string tag, value;
+	std::vector<std::string> lines = Tools::splitLines(Tools::readFile(fname));
+	std::string inputEnd = "";
+	std::string outputEnd = "";
+	std::string requireEnd = "";
+	std::string dependEnd = "";
+	std::string input = "";
+	std::string output = "";
+	std::string require = "";
+	std::string depend = "";
+	std::string exectime = "";
+	std::string caseDescription = "";
+	std::string tag, value;
 
 	float gradeReduction = std::numeric_limits<float>::min();
 	double executionTime = 3600.0;
 	/*must be changed from String
 	 * to pair type (regexp o no) and string*/
-	vector<string> outputs;
-	vector<string> reqs;
-	vector<string> depends;
+	std::vector<std::string> outputs;
+	std::vector<std::vector<std::pair<std::string, std::string>>> reqs;
+	std::vector<std::string> depends;
 	state = regular;
 	int nlines = lines.size();
+
 	for (int i = 0; i < nlines; i++) {
-		string &line = lines[i];
+		std::string &line = lines[i];
 		if (line.empty()) {
 			continue;
 		}
 		size_t poseq;
-		if ((poseq = line.find('=')) != string::npos) {
+		if ((poseq = line.find('=')) != std::string::npos) {
 			tag = Tools::normalizeTag(line.substr(0, poseq + 1));
 			value = line.substr(poseq + 1);
 		} else {
@@ -1424,7 +1473,7 @@ void Evaluation::loadTestCases(string fname) {
 		if (state == ininput) {
 			if (inputEnd.size()) { //Check for end of input
 				size_t pos = line.find(inputEnd);
-				if (pos == string::npos) {
+				if (pos == std::string::npos) {
 					input += line + "\n";
 				} else {
 					cutToEndTag(line, inputEnd);
@@ -1443,7 +1492,7 @@ void Evaluation::loadTestCases(string fname) {
 		} else if (state == inoutput) {
 			if (outputEnd.size()) { //Check for end of output
 				size_t pos = line.find(outputEnd);
-				if (pos == string::npos) {
+				if (pos == std::string::npos) {
 					output += line + "\n";
 				} else {
 					cutToEndTag(line, outputEnd);
@@ -1466,12 +1515,12 @@ void Evaluation::loadTestCases(string fname) {
 		} else if (state == inrequire) {
 			if (requireEnd.size()) { //Check for end of output
 				size_t pos = line.find(requireEnd);
-				if (pos == string::npos) {
+				if (pos == std::string::npos) {
 					require += line + "\n";
 				} else {
 					cutToEndTag(line, requireEnd);
 					require += line;
-					reqs.push_back(require);
+					reqs.push_back(parseRequire(require));
 					require = "";
 					state = regular;
 					continue; //Next line
@@ -1479,7 +1528,7 @@ void Evaluation::loadTestCases(string fname) {
 			} else if (tag.size() && (tag == INPUT_TAG || tag == OUTPUT_TAG
 					|| tag == GRADEREDUCTION_TAG || tag == CASE_TAG || tag == REQUIRES_TAG || tag == DEPENDS_ON_TAG || tag == EXECUTION_TIME_TAG)) {//New valid tag
 				trim(require);
-				reqs.push_back(require);
+				reqs.push_back(parseRequire(require));
 				require = "";
 				state = regular;
 			} else {
@@ -1489,7 +1538,7 @@ void Evaluation::loadTestCases(string fname) {
 		} else if (state == independ) {
 			if (dependEnd.size()) { //Check for end of output
 				size_t pos = line.find(dependEnd);
-				if (pos == string::npos) {
+				if (pos == std::string::npos) {
 					depend += line + "\n";
 				} else {
 					cutToEndTag(line, dependEnd);
@@ -1590,7 +1639,7 @@ void Evaluation::loadTestCases(string fname) {
 	}
 	if (state == inrequire) {
 		trim(require);
-		reqs.push_back(require);
+		reqs.push_back(parseRequire(require));
 	}
 	if (state == independ) {
 		trim(depend);
@@ -1623,12 +1672,13 @@ void Evaluation::addFatalError(const char *m) {
 }
 
 void Evaluation::runTests() {
-	RUN_ONE_TEST("Segmentation::Fault");
+	utf::SuiteHolder::Instance().run_one("private", "SegmentationFault");
 	struct sigaction action;
 	memset(&action, 0, sizeof(struct sigaction));
 	action.sa_flags = SA_SIGINFO;
 	action.sa_sigaction = handler;
 	sigaction(SIGSEGV, &action, NULL);
+	sigaction(SIGABRT, &action, NULL);
 	std::unordered_map<std::string, std::vector<std::string>> errorMessages;
 	if (testCases.size() == 0) {
 		return;
@@ -1667,13 +1717,13 @@ void Evaluation::runTests() {
 		bool allDependsPassed = true;
 
 		if (testCases[i].depends.empty()) {
-			computeAndCheckRequirements(testCases[i], errorMessages, allRequirementsPassed);
+			testCases[i].computeAndCheckRequirements(errorMessages, allRequirementsPassed);
 		} else {
 			for (const std::string &name_dependency : testCases[i].depends) {
 				const TestCase &dependency = *std::find_if(testCases.begin(), testCases.end(), [&](const TestCase &tc) {
 					return tc.getCaseDescription() == name_dependency;
 				});
-				recursiveFindRequirementsAndDependencies(testCases, dependency, TestCase::requirements, singleDependsPassed, errorMessages);
+				recursiveFindRequirementsAndDependencies(dependency, singleDependsPassed, errorMessages);
 				if (!singleDependsPassed) {
 					allDependsPassed = false;
 					errorMessages[testCases[i].getCaseDescription()].push_back(std::string("Requirements for <") + name_dependency + std::string("> are not satisfied!\n"));
@@ -1683,7 +1733,7 @@ void Evaluation::runTests() {
 		}
 		
 		if (allDependsPassed) {
-			computeAndCheckRequirements(testCases[i], errorMessages, allRequirementsPassed);
+			testCases[i].computeAndCheckRequirements(errorMessages, allRequirementsPassed);
 		}
 		
 		nruns++;
@@ -1788,7 +1838,30 @@ void Evaluation::outputEvaluation() {
 	fflush(stdout);
 }
 
+void Evaluation::recursiveFindRequirementsAndDependencies(const TestCase &testCase, bool &allRequirementsPassed, std::unordered_map<std::string, std::vector<std::string>> &errorMessages) {
+	for (const auto &reqs : testCase.req) {
+	    bool requirementPassed = false;
+		for (auto [suite_name, test_name] : reqs) {
+			Evaluation::trim(suite_name);
+			Evaluation::trim(test_name);
+			requirementPassed |= utf::SuiteHolder::Instance().report(suite_name, test_name).satisfied();
+		}
+		allRequirementsPassed &= requirementPassed;
+	}
+	
+	for (int i = 0; i < testCase.depends.size(); i++) {
+		const TestCase &dependency = *std::find_if(this->testCases.begin(), this->testCases.end(), [&](const TestCase &tc) {
+			return tc.getCaseDescription() == testCase.depends[i];
+		});
+		recursiveFindRequirementsAndDependencies(dependency, allRequirementsPassed, errorMessages);
+	}
+}
+
 void handler(int nSignum, siginfo_t* si, void* vcontext) {
+	static int one_time_call;
+	if (one_time_call == 1) {
+		abort();
+	}
 	Evaluation* obj = Evaluation::getSinglenton();
 	for (int i = obj->getNRuns(); i < obj->getTestCasesSize(); i++) {
 		strncpy(obj->titles[obj->ncomments], obj->getTestCase(i).getCommentTitle().c_str(),
@@ -1807,14 +1880,10 @@ void handler(int nSignum, siginfo_t* si, void* vcontext) {
 	    strncat(obj->comments[obj->ncomments], 
 				"> and what this test verifies is described below:\n\n1) ",
 	    		MAXCOMMENTSLENGTH);	
-	    for (int i = 0; i < segmentation_fault_case_index; i++) {
-	    	if (strcmp(segmentation_fault_case[i][0], obj->getTestCase(obj->getNRuns()).getCaseDescription().c_str()) == 0) {
-				strncat(obj->comments[obj->ncomments], segmentation_fault_case[i][1],
-						MAXCOMMENTSLENGTH);		
-				break;
-			}
-		}
-		if (segmentation_fault_case_index == 0) {
+    	if (utf::SuiteHolder::Instance().segfault_messages().count(obj->getTestCase(obj->getNRuns()).getCaseDescription()) == 1) {
+			strncat(obj->comments[obj->ncomments], utf::SuiteHolder::Instance().segfault_messages().at(obj->getTestCase(obj->getNRuns()).getCaseDescription()).c_str(),
+					MAXCOMMENTSLENGTH);		
+		} else {
 			strncat(obj->comments[obj->ncomments], "This test doesn't have a default description. ASK LABORATORY PROFESSOR OR FRAMEWORK ADMINISTRATOR!",
 					MAXCOMMENTSLENGTH);	
 		}
@@ -1832,9 +1901,9 @@ void handler(int nSignum, siginfo_t* si, void* vcontext) {
 	obj->outputEvaluation();
   	ucontext_t* context = (ucontext_t*)vcontext;
   	context->uc_mcontext.gregs[REG_RIP]++;
+  	one_time_call = 1;
   	abort();
 }
-
 
 void nullSignalCatcher(int n) {
 
@@ -1862,6 +1931,7 @@ void setSignalsCatcher() {
 	for(int i=0;i<31; i++) {
 		signal(i, nullSignalCatcher);
 	}
+	signal(SIGABRT, signalCatcher);
 	signal(SIGINT, signalCatcher);
 	signal(SIGQUIT, signalCatcher);
 	signal(SIGILL, signalCatcher);
@@ -1870,71 +1940,6 @@ void setSignalsCatcher() {
 	signal(SIGSEGV, signalCatcher);
 	signal(SIGALRM, signalCatcher);
 	signal(SIGTERM, signalCatcher);
-}
-
-void computeAndCheckRequirements(const TestCase& testCase, std::unordered_map<std::string, std::vector<std::string>>& errorMessages, bool& allRequirementsPassed) {
-	for (int j = 0; j < testCase.req.size(); j++) {
-		std::vector<std::string> failedReqs;
-		bool requirementPassed = false;
-		std::string currentReq = testCase.req[j];
-		int64_t orIndex = currentReq.find('|');
-		while (orIndex != std::string::npos) {
-			std::string parsedReq = currentReq.substr(0, orIndex);
-			Evaluation::trim(parsedReq);
-			RUN_ONE_TEST(parsedReq);
-			requirementPassed |= TestCase::requirements[parsedReq].first;
-			if (!requirementPassed) {
-				failedReqs.push_back(parsedReq);
-			}
-			currentReq = currentReq.substr(orIndex + 1, currentReq.size());
-			orIndex = currentReq.find('|');
-		}
-		Evaluation::trim(currentReq);
-		RUN_ONE_TEST(currentReq);
-		requirementPassed |= TestCase::requirements[currentReq].first;
-		allRequirementsPassed &= requirementPassed;
-		if (!requirementPassed) {
-			failedReqs.push_back(currentReq);
-			for (std::string& failedReq : failedReqs) {
-				for (int k = 0; k < TestCase::requirements[failedReq].second.size(); k++) {
-					std::vector<std::string>::iterator isErrorMessage = std::find(errorMessages[testCase.getCaseDescription()].begin(), 
-																				  errorMessages[testCase.getCaseDescription()].end(), TestCase::requirements[failedReq].second[k]);
-					if (isErrorMessage == errorMessages[testCase.getCaseDescription()].end()) { 
-						errorMessages[testCase.getCaseDescription()].push_back(TestCase::requirements[failedReq].second[k]);
-					}
-				}
-			}
-		}
-	}
-}
-
-void recursiveFindRequirementsAndDependencies(const std::vector<TestCase> &testCases, const TestCase &testCase,
-							   const std::unordered_map<std::string, std::pair<bool, std::vector<std::string>>> &requirements, bool &allRequirementsPassed,
-							   std::unordered_map<std::string, std::vector<std::string>> &errorMessages) {
-	
-	for (int i = 0; i < testCase.req.size(); i++) {
-	    bool requirementPassed = false;
-    	std::string currentReq = testCase.req[i];
-		int64_t orIndex = currentReq.find('|');
-		while (orIndex != std::string::npos) {
-			std::string parsedReq = currentReq.substr(0, orIndex);
-			Evaluation::trim(parsedReq);
-			requirementPassed |= TestCase::requirements[parsedReq].first;
-			currentReq = currentReq.substr(orIndex + 1, currentReq.size());
-			orIndex = currentReq.find('|');
-		}
-		Evaluation::trim(currentReq);
-		requirementPassed |= TestCase::requirements[currentReq].first;
-		allRequirementsPassed &= requirementPassed;
-	}
-	
-	for (int i = 0; i < testCase.depends.size(); i++) {
-		const TestCase &dependency = *std::find_if(testCases.begin(), testCases.end(), [&](const TestCase &tc) {
-			return tc.getCaseDescription() == testCase.depends[i];
-		});
-		recursiveFindRequirementsAndDependencies(testCases, dependency, requirements, allRequirementsPassed, errorMessages);
-	}
-	
 }
 
 int main(int argc, char *argv[], const char **env) {
@@ -1948,4 +1953,3 @@ int main(int argc, char *argv[], const char **env) {
 	obj->outputEvaluation();
 	return EXIT_SUCCESS;
 }
-

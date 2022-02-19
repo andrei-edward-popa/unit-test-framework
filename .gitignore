@@ -1,0 +1,13 @@
+/.vpl_tester
+/*.cases
+/*.h_
+/*.sh
+/*.cpp_
+/*.cpp
+/*.cpp.save
+/vpl_execution
+/vpl_test
+tcs/*.conf
+/tcs/xml
+tcs/tests.h
+tcs/vpl_evaluate.cases
